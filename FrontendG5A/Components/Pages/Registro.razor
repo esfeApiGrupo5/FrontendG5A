@@ -1,0 +1,93 @@
+﻿@page "/register"
+@using FrontendG5A.DTO
+@using FrontendG5A.Services
+@inject AuthService AuthService
+@inject NavigationManager NavigationManager
+
+<!-- Incluye el CDN de Tailwind CSS para el diseño -->
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<div class="flex items-center justify-center min-h-screen p-4 bg-dark-100">
+    <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md">
+        <h2 class="text-3xl font-bold text-dark-800 text-center mb-2">Crear Cuenta</h2>
+
+        @if (!string.IsNullOrEmpty(MensajeError))
+        {
+            <div class="bg-red-100 text-red-700 p-4 rounded-md mb-4 border border-red-300 transition-opacity duration-300">
+                @MensajeError
+            </div>
+        }
+        @if (!string.IsNullOrEmpty(MensajeExito))
+        {
+            <div class="bg-green-100 text-green-700 p-4 rounded-md mb-4 border border-green-300 transition-opacity duration-300">
+                @MensajeExito
+            </div>
+        }
+
+        <EditForm Model="@Usuario" OnValidSubmit="@HandleRegistration">
+            <DataAnnotationsValidator />
+
+            <div class="mb-5">
+                <label for="nombre" class="block text-sm font-medium text-dark-700">Nombre</label>
+                <InputText id="nombre" @bind-Value="Usuario.Nombre"
+                           class="border border-black mt-1 block w-full rounded-md border-dark-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-4 py-2 transition duration-150 ease-in-out" />
+                <ValidationMessage For="@(() => Usuario.Nombre)" class="text-red-500 text-xs mt-1" />
+            </div>
+
+            <div class="mb-5">
+                <label for="correo" class="block text-sm font-medium text-dark-700">Correo</label>
+                <InputText id="correo" @bind-Value="Usuario.Correo"
+                           class="border border-black mt-1 block w-full rounded-md border-dark-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-4 py-2 transition duration-150 ease-in-out" />
+                <ValidationMessage For="@(() => Usuario.Correo)" class="text-red-500 text-xs mt-1" />
+            </div>
+
+            <div class="mb-6">
+                <label for="password" class="block text-sm font-medium text-dark-700">Contraseña</label>
+                <InputText id="password" type="password" @bind-Value="Usuario.Password"
+                           class="border border-black mt-1 block w-full rounded-md border-dark-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-4 py-2 transition duration-150 ease-in-out" />
+                <ValidationMessage For="@(() => Usuario.Password)" class="text-red-500 text-xs mt-1" />
+            </div>
+
+            <button type="submit"
+                    class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out">
+                Registrar
+            </button>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private UsuarioRegistrarDto Usuario = new();
+    private string? MensajeError;
+    private string? MensajeExito;
+
+    private async Task HandleRegistration()
+    {
+        MensajeError = null;
+        MensajeExito = null;
+
+        // Establecer valores por defecto (si no están en el formulario)
+        Usuario.Estado = 1;
+        Usuario.IdRol = 1;
+
+        // 🚀 Llama al servicio, esperando solo un booleano
+        bool registroExitoso = await AuthService.Register(Usuario);
+
+        if (registroExitoso)
+        {
+            MensajeExito = "¡Registro exitoso! Ahora puedes iniciar sesión.";
+
+            // Redirigir al usuario a la página de login
+            await Task.Delay(1500); // Dar tiempo para leer el mensaje
+            NavigationManager.NavigateTo("/login");
+        }
+        else
+        {
+            // La API devolvió un código de estado de error (4xx o 5xx)
+            MensajeError = "El registro falló. El correo podría estar ya en uso o hubo un error en el servidor.";
+        }
+    }
+}

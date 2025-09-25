@@ -7,38 +7,51 @@
 
 <PageTitle>Login</PageTitle>
 
-<div class="row justify-content-center">
-    <div class="col-md-6">
+<!-- Incluye el CDN de Tailwind CSS para el diseño -->
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<div class="flex items-center justify-center min-h-screen p-4 bg-gray-100 dark:bg-dark-100">
+    <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md">
+        <h2 class="text-3xl font-bold text-gray-800 text-center mb-6">Iniciar Sesión</h2>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="bg-red-100 text-red-700 p-4 rounded-md mb-4 border border-red-300 transition-opacity duration-300">
+                @errorMessage
+            </div>
+        }
+
         <EditForm Model="usuario" OnValidSubmit="HandleLogin">
-            <div class="mb-3">
-                <label class="form-label">Correo Electrónico</label>
-                <InputText class="form-control" @bind-Value="usuario.Correo" />
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Contraseña</label>
-                <InputText type="password" class="form-control" @bind-Value="usuario.Password" />
+            <div class="mb-5">
+                <label for="correo" class="block text-sm font-medium text-gray-700">Correo Electrónico</label>
+                <InputText id="correo" @bind-Value="usuario.Correo"
+                           class="border border-gray-300 mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-4 py-2 transition duration-150 ease-in-out" />
             </div>
 
-            @if (!string.IsNullOrEmpty(errorMessage))
-            {
-                <div class="alert alert-danger mt-3">@errorMessage</div>
-            }
+            <div class="mb-6">
+                <label for="password" class="block text-sm font-medium text-gray-700">Contraseña</label>
+                <InputText id="password" type="password" @bind-Value="usuario.Password"
+                           class="border border-gray-300 mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-4 py-2 transition duration-150 ease-in-out" />
+            </div>
 
-            <button type="submit" class="btn btn-primary w-100">Iniciar Sesión</button>
+            <button type="submit"
+                    class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out">
+                Iniciar Sesión
+            </button>
         </EditForm>
     </div>
 </div>
 
 @code {
-    // La clase UsuarioDTOSession tiene campos privados, por lo que es mejor crear
-    // una clase local para el binding y luego transferir los valores.
-    // O mejor aún, modificar la clase original para usar propiedades públicas.
     private DTO.UsuarioDTOSession usuario = new DTO.UsuarioDTOSession();
     private string errorMessage;
 
     private async Task HandleLogin()
     {
-        
+        errorMessage = null;
         var token = await authService.login(usuario);
 
         if (string.IsNullOrEmpty(token))
@@ -48,7 +61,6 @@
         }
 
         await authService.SetToken(token);
-        // Redireccionar a la página de inicio o a donde sea necesario después del login.
         navigationManager.NavigateTo("/", true);
     }
 }
