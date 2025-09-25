@@ -1,6 +1,7 @@
 ﻿using FrontendG5A.DTO;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net.Http.Json;
 
 namespace FrontendG5A.Services
 {
@@ -14,6 +15,26 @@ namespace FrontendG5A.Services
         {
             _localStorage = localStorage;
             _httpClient = httpClient;
+        }
+
+        // 🆕 Método de Registro Actualizado: Ahora devuelve Task<bool>
+        public async Task<bool> Register(UsuarioRegistrarDto usuarioRegistrarDto)
+        {
+            // El endpoint que especificaste es "/registrar"
+            var response = await _httpClient.PostAsJsonAsync("api/auth/registrar", usuarioRegistrarDto);
+
+            
+            if (response.IsSuccessStatusCode)
+            {
+                // Registro exitoso.
+                return true;
+            }
+
+            // Opcional: Manejar el cuerpo del error si la API lo proporciona
+            var errorContent = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"Error de registro: {errorContent}");
+
+            return false; // Indica que el registro falló
         }
 
         // Guarda el token en el almacenamiento local y envio a los endpoints
