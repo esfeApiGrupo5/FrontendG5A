@@ -2,6 +2,7 @@
 @using FrontendG5A.DTO
 @using FrontendG5A.Services
 
+@inject AuthService AuthService
 @inject BlogService BlogService
 
 
@@ -41,11 +42,20 @@ else
 }
 
 @code {
-    private List<BlogDTO>? Blogs;
+     private List<BlogDTO>? Blogs;
 
     protected override async Task OnInitializedAsync()
     {
-        // Llama al método del servicio
+        // Verificar si hay token en almacenamiento
+        var token = await AuthService.GetToken();
+
+        if (!string.IsNullOrEmpty(token))
+        {
+            // Configura el HttpClient para usarlo
+            await AuthService.SetToken(token);
+        }
+
+        // Llama al servicio para obtener blogs
         Blogs = await BlogService.ObtenerBlogsAsync();
     }
 }
