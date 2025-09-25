@@ -14,12 +14,12 @@ namespace FrontendG5A.Services
             _httpClient = httpClient;
         }
 
-        public async Task<List<blogDTO>?> ObtenerBlogsAsync()
+        public async Task<List<BlogDTO>?> ObtenerBlogsAsync()
         {
             try
             {
                 // Petición y deserialización automática.
-                var blogs = await _httpClient.GetFromJsonAsync<List<blogDTO>>(BlogListEndpoint);
+                var blogs = await _httpClient.GetFromJsonAsync<List<BlogDTO>>(BlogListEndpoint);
 
                 return blogs;
             }

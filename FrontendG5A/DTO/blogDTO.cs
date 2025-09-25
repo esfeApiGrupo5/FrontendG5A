@@ -2,7 +2,7 @@
 
 namespace FrontendG5A.DTO
 {
-    public class blogDTO
+    public class BlogDTO
     {
         // Las propiedades 'int', 'long', y 'DateTime' no necesitan [JsonPropertyName] si tienen el mismo nombre.
         public int Id { get; set; }

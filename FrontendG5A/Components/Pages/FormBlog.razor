@@ -1,5 +1,9 @@
 ﻿@page "/blog"
+@using FrontendG5A.DTO
+@using FrontendG5A.Services
+
 @inject BlogService BlogService
+
 
 <h3>Listado de Blogs</h3>
 
@@ -37,7 +41,7 @@ else
 }
 
 @code {
-    private List<blogDTO>? Blogs;
+    private List<BlogDTO>? Blogs;
 
     protected override async Task OnInitializedAsync()
     {
