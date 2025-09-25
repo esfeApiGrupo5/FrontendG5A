@@ -1,5 +1,47 @@
 ﻿@page "/blog"
+@inject BlogService BlogService
 
-<PageTitle>Blogs</PageTitle>
+<h3>Listado de Blogs</h3>
 
-<h3>blogInicio</h3>
+@if (Blogs == null)
+{
+    <p><em>Cargando blogs...</em></p>
+}
+else if (Blogs.Count == 0)
+{
+    <p>No hay blogs disponibles.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Título</th>
+                <th>Autor</th>
+                <th>Fecha</th>
+                <th>Usuario</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var blog in Blogs)
+            {
+                <tr>
+                    <td>@blog.Titulo</td>
+                    <td>@blog.Autor</td>
+                    <td>@blog.FechaPublicacion.ToShortDateString()</td>
+                    <td>@(blog.InfoUsuario?.NombreUsuario ?? "N/A")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<blogDTO>? Blogs;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Llama al método del servicio
+        Blogs = await BlogService.ObtenerBlogsAsync();
+    }
+}
