@@ -2,9 +2,7 @@
 {
     public class UsuarioDTOSession
     {
-        private String correo;
-        private String password;
-        public String getCorreo() { return correo; }
-        public String getPassword() { return password; }
+        public string Correo { get; set; }
+        public string Password { get; set; }
     }
 }

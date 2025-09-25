@@ -1,0 +1,54 @@
+@page "/login"
+@using FrontendG5A.DTO
+@using FrontendG5A.Services
+
+@inject NavigationManager navigationManager
+@inject AuthService authService
+
+<PageTitle>Login</PageTitle>
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <EditForm Model="usuario" OnValidSubmit="HandleLogin">
+            <div class="mb-3">
+                <label class="form-label">Correo Electrónico</label>
+                <InputText class="form-control" @bind-Value="usuario.Correo" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Contraseña</label>
+                <InputText type="password" class="form-control" @bind-Value="usuario.Password" />
+            </div>
+
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger mt-3">@errorMessage</div>
+            }
+
+            <button type="submit" class="btn btn-primary w-100">Iniciar Sesión</button>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    // La clase UsuarioDTOSession tiene campos privados, por lo que es mejor crear
+    // una clase local para el binding y luego transferir los valores.
+    // O mejor aún, modificar la clase original para usar propiedades públicas.
+    private DTO.UsuarioDTOSession usuario = new DTO.UsuarioDTOSession();
+    private string errorMessage;
+
+    private async Task HandleLogin()
+    {
+        
+        var token = await authService.login(usuario);
+
+        if (string.IsNullOrEmpty(token))
+        {
+            errorMessage = "Credenciales incorrectas. Por favor, intente de nuevo.";
+            return;
+        }
+
+        await authService.SetToken(token);
+        // Redireccionar a la página de inicio o a donde sea necesario después del login.
+        navigationManager.NavigateTo("/", true);
+    }
+}

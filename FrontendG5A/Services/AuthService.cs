@@ -22,8 +22,8 @@ namespace FrontendG5A.Services
             var response = await _httpClient.PostAsJsonAsync("api/auth/login", usuarioDTOSession);
             if (response.IsSuccessStatusCode)
             {
-                var token = await response.Content.ReadFromJsonAsync<string>();
-                return token;
+                var authResponse = await response.Content.ReadFromJsonAsync<AuthResponse>();
+                return authResponse.Token;
             }
             return null;
         }
