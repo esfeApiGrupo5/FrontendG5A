@@ -1,7 +1,8 @@
-﻿using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
+﻿using FrontendG5A.DTO;
+using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using System.IdentityModel.Tokens.Jwt;
 
-namespace FrontendG5A.DTO
+namespace FrontendG5A.Services
 {
     public class AuthService
     {

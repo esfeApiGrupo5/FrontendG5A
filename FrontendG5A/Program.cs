@@ -1,5 +1,5 @@
 using FrontendG5A.Components;
-using FrontendG5A.DTO;
+using FrontendG5A.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
