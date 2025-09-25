@@ -1,0 +1,73 @@
+﻿@page "/register"
+@using FrontendG5A.DTO
+@using FrontendG5A.Services
+@inject AuthService AuthService
+@inject NavigationManager NavigationManager
+
+<h3>Registro de Nuevo Usuario</h3>
+
+@if (!string.IsNullOrEmpty(MensajeError))
+{
+    <div class="alert alert-danger">@MensajeError</div>
+}
+@if (!string.IsNullOrEmpty(MensajeExito))
+{
+    <div class="alert alert-success">@MensajeExito</div>
+}
+
+<EditForm Model="@Usuario" OnValidSubmit="@HandleRegistration">
+    <DataAnnotationsValidator />
+
+    <div class="mb-3">
+        <label for="nombre" class="form-label">Nombre</label>
+        <InputText id="nombre" @bind-Value="Usuario.Nombre" class="form-control" />
+        <ValidationMessage For="@(() => Usuario.Nombre)" />
+    </div>
+
+    <div class="mb-3">
+        <label for="correo" class="form-label">Correo</label>
+        <InputText id="correo" @bind-Value="Usuario.Correo" class="form-control" />
+        <ValidationMessage For="@(() => Usuario.Correo)" />
+    </div>
+
+    <div class="mb-3">
+        <label for="password" class="form-label">Contraseña</label>
+        <InputText id="password" type="password" @bind-Value="Usuario.Password" class="form-control" />
+        <ValidationMessage For="@(() => Usuario.Password)" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Registrar</button>
+</EditForm>
+
+@code {
+    private UsuarioRegistrarDto Usuario = new();
+    private string? MensajeError;
+    private string? MensajeExito;
+
+    private async Task HandleRegistration()
+    {
+        MensajeError = null;
+        MensajeExito = null;
+
+        // Establecer valores por defecto (si no están en el formulario)
+        Usuario.Estado = 1;
+        Usuario.IdRol = 1;
+
+        // 🚀 Llama al servicio, esperando solo un booleano
+        bool registroExitoso = await AuthService.Register(Usuario);
+
+        if (registroExitoso)
+        {
+            MensajeExito = "¡Registro exitoso! Ahora puedes iniciar sesión.";
+
+            // Redirigir al usuario a la página de login
+            await Task.Delay(1500); // Dar tiempo para leer el mensaje
+            NavigationManager.NavigateTo("/login");
+        }
+        else
+        {
+            // La API devolvió un código de estado de error (4xx o 5xx)
+            MensajeError = "El registro falló. El correo podría estar ya en uso o hubo un error en el servidor.";
+        }
+    }
+}
