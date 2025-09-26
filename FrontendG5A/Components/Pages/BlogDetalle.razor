@@ -1,0 +1,366 @@
+﻿@page "/blog/{id:int}"
+@using FrontendG5A.DTO
+@using FrontendG5A.Services
+
+@inject BlogService BlogService
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<div class="container mt-4">
+    @if (Blog == null)
+    {
+        @if (CargandoBlog)
+        {
+            <div class="text-center">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Cargando blog...</span>
+                </div>
+                <p class="mt-2">Cargando detalles del blog...</p>
+            </div>
+        }
+        else if (BlogNoEncontrado)
+        {
+            <div class="alert alert-warning">
+                <h4 class="alert-heading">Blog no encontrado</h4>
+                <p>El blog con ID @Id no existe o no está disponible.</p>
+                <hr>
+                <button class="btn btn-primary" @onclick="VolverALista">
+                    <i class="bi bi-arrow-left"></i> Volver a la lista
+                </button>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="row">
+            <div class="col-12">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item">
+                            <a href="/blog" class="text-decoration-none">Blogs</a>
+                        </li>
+                        <li class="breadcrumb-item active" aria-current="page">@Blog.Titulo</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h1 class="h3 mb-0">@Blog.Titulo</h1>
+                            <button class="btn btn-light btn-sm" @onclick="VolverALista">
+                                <i class="bi bi-arrow-left"></i> Volver
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <h6 class="text-muted">Información del Blog</h6>
+                                <table class="table table-sm">
+                                    <tr>
+                                        <td><strong>ID:</strong></td>
+                                        <td>@Blog.Id</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Autor:</strong></td>
+                                        <td>@Blog.Autor</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Fecha de Publicación:</strong></td>
+                                        <td>@Blog.FechaPublicacion.ToString("dd/MM/yyyy HH:mm")</td>
+                                    </tr>
+                                    @if (Blog.InfoUsuario != null)
+                                    {
+                                        <tr>
+                                            <td><strong>Usuario:</strong></td>
+                                            <td>@Blog.InfoUsuario.NombreUsuario</td>
+                                        </tr>
+                                        @if (!string.IsNullOrEmpty(Blog.InfoUsuario.CorreoElectronico))
+                                        {
+                                            <tr>
+                                                <td><strong>Correo:</strong></td>
+                                                <td>@Blog.InfoUsuario.CorreoElectronico</td>
+                                            </tr>
+                                        }
+                                    }
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="text-muted">Acciones</h6>
+                                <div class="btn-group" role="group">
+                                    <button class="btn btn-outline-warning" @onclick="MostrarModalEditar">
+                                        <i class="bi bi-pencil"></i> Editar
+                                    </button>
+                                    <button class="btn btn-outline-danger" @onclick="EliminarBlog">
+                                        <i class="bi bi-trash"></i> Eliminar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <div class="content-section">
+                            <h6 class="text-muted mb-3">Contenido</h6>
+                            <div class="blog-content">
+                                @if (!string.IsNullOrEmpty(Blog.Descripcion))
+                                {
+                                    <div class="card bg-light">
+                                        <div class="card-body">
+                                            @foreach (var parrafo in Blog.Descripcion.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+                                            {
+                                                <p class="mb-3">@parrafo</p>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <p class="text-muted fst-italic">Este blog no tiene descripción disponible.</p>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(MensajeError))
+    {
+        <div class="alert alert-danger alert-dismissible fade show mt-3">
+            @MensajeError
+            <button type="button" class="btn-close" @onclick="() => MensajeError = string.Empty"></button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(MensajeExito))
+    {
+        <div class="alert alert-success alert-dismissible fade show mt-3">
+            @MensajeExito
+            <button type="button" class="btn-close" @onclick="() => MensajeExito = string.Empty"></button>
+        </div>
+    }
+</div>
+
+<!-- Modal Editar Blog -->
+<div class="modal fade @(MostrarModalEditarVisible ? "show" : "")" style="display: @(MostrarModalEditarVisible ? "block" : "none")" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <EditForm Model="BlogEditando" OnValidSubmit="GuardarCambios">
+                <DataAnnotationsValidator />
+                <div class="modal-header">
+                    <h5 class="modal-title">Editar Blog: @Blog?.Titulo</h5>
+                    <button type="button" class="btn-close" @onclick="CerrarModalEditar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Título <small class="text-muted">(máximo 100 caracteres)</small></label>
+                        <InputText class="form-control" @bind-Value="BlogEditando.Titulo" maxlength="100" />
+                        <ValidationMessage For="@(() => BlogEditando.Titulo)" />
+                        <div class="form-text">@(BlogEditando.Titulo?.Length ?? 0)/100 caracteres</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Autor <small class="text-muted">(máximo 50 caracteres)</small></label>
+                        <InputText class="form-control" @bind-Value="BlogEditando.Autor" maxlength="50" />
+                        <ValidationMessage For="@(() => BlogEditando.Autor)" />
+                        <div class="form-text">@(BlogEditando.Autor?.Length ?? 0)/50 caracteres</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descripción <small class="text-muted">(máximo 500 caracteres)</small></label>
+                        <InputTextArea class="form-control" rows="6" @bind-Value="BlogEditando.Descripcion" maxlength="500" />
+                        <ValidationMessage For="@(() => BlogEditando.Descripcion)" />
+                        <div class="form-text">@(BlogEditando.Descripcion?.Length ?? 0)/500 caracteres</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CerrarModalEditar">Cancelar</button>
+                    <button type="submit" class="btn btn-warning" disabled="@GuardandoCambios">
+                        @if (GuardandoCambios)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                        }
+                        Guardar Cambios
+                    </button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+@if (MostrarModalEditarVisible)
+{
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private BlogDTO? Blog;
+    private bool CargandoBlog = true;
+    private bool BlogNoEncontrado = false;
+    private string MensajeError = string.Empty;
+    private string MensajeExito = string.Empty;
+
+    // Modal Editar
+    private bool MostrarModalEditarVisible = false;
+    private BlogModificarDTO BlogEditando = new();
+    private bool GuardandoCambios = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ConfigurarAutenticacion();
+        await CargarBlog();
+    }
+
+    private async Task ConfigurarAutenticacion()
+    {
+        var token = await AuthService.GetToken();
+        if (!string.IsNullOrEmpty(token))
+        {
+            await AuthService.SetToken(token);
+        }
+    }
+
+    private async Task CargarBlog()
+    {
+        CargandoBlog = true;
+        BlogNoEncontrado = false;
+
+        try
+        {
+            Console.WriteLine($"[BlogDetail] Cargando blog ID: {Id}");
+            Blog = await BlogService.ObtenerBlogPorIdAsync(Id);
+
+            if (Blog == null)
+            {
+                Console.WriteLine($"[BlogDetail] Blog ID {Id} no encontrado");
+                BlogNoEncontrado = true;
+            }
+            else
+            {
+                Console.WriteLine($"[BlogDetail] Blog cargado: {Blog.Titulo}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[BlogDetail Error] Error al cargar blog: {ex.Message}");
+            MensajeError = $"Error al cargar el blog: {ex.Message}";
+            BlogNoEncontrado = true;
+        }
+        finally
+        {
+            CargandoBlog = false;
+        }
+    }
+
+    private void VolverALista()
+    {
+        Navigation.NavigateTo("/blog");
+    }
+
+    // Métodos del Modal Editar
+    private void MostrarModalEditar()
+    {
+        if (Blog == null) return;
+
+        Console.WriteLine($"[BlogDetail] Abriendo modal de edición para blog ID: {Blog.Id}");
+        BlogEditando = new BlogModificarDTO
+        {
+            Titulo = Blog.Titulo ?? string.Empty,
+            Autor = Blog.Autor ?? string.Empty,
+            Descripcion = Blog.Descripcion ?? string.Empty
+        };
+        MostrarModalEditarVisible = true;
+        StateHasChanged();
+    }
+
+    private void CerrarModalEditar()
+    {
+        MostrarModalEditarVisible = false;
+        BlogEditando = new BlogModificarDTO();
+        MensajeError = string.Empty;
+        StateHasChanged();
+    }
+
+    private async Task GuardarCambios()
+    {
+        if (Blog == null) return;
+
+        GuardandoCambios = true;
+        StateHasChanged();
+
+        try
+        {
+            Console.WriteLine($"[BlogDetail] Guardando cambios para blog ID: {Blog.Id}");
+            var resultado = await BlogService.ModificarBlogAsync(Blog.Id, BlogEditando);
+
+            if (resultado)
+            {
+                Console.WriteLine($"[BlogDetail] Blog modificado exitosamente");
+                MensajeExito = "Blog modificado exitosamente";
+
+                // Actualizar los datos del blog en la vista
+                Blog.Titulo = BlogEditando.Titulo;
+                Blog.Autor = BlogEditando.Autor;
+                Blog.Descripcion = BlogEditando.Descripcion;
+
+                CerrarModalEditar();
+            }
+            else
+            {
+                Console.WriteLine($"[BlogDetail] Error al modificar blog");
+                MensajeError = "Error al modificar el blog. Intenta nuevamente.";
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[BlogDetail Error] Error al guardar: {ex.Message}");
+            MensajeError = $"Error al guardar los cambios: {ex.Message}";
+        }
+        finally
+        {
+            GuardandoCambios = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task EliminarBlog()
+    {
+        if (Blog == null) return;
+
+        try
+        {
+            var confirmado = await JSRuntime.InvokeAsync<bool>("confirm",
+                $"¿Estás seguro de que deseas eliminar el blog '{Blog.Titulo}'? Esta acción no se puede deshacer.");
+
+            if (confirmado)
+            {
+                Console.WriteLine($"[BlogDetail] Eliminando blog ID: {Blog.Id}");
+                var resultado = await BlogService.EliminarBlogAsync(Blog.Id);
+
+                if (resultado)
+                {
+                    Console.WriteLine($"[BlogDetail] Blog eliminado exitosamente");
+                    // Redirigir a la lista después de eliminar
+                    Navigation.NavigateTo("/blog");
+                }
+                else
+                {
+                    Console.WriteLine($"[BlogDetail] Error al eliminar blog");
+                    MensajeError = "Error al eliminar el blog. Intenta nuevamente.";
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[BlogDetail Error] Error al eliminar: {ex.Message}");
+            MensajeError = $"Error al eliminar el blog: {ex.Message}";
+        }
+    }
+}

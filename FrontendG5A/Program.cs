@@ -7,6 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+//Scoped
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("https://api-gateway-8wvg.onrender.com/") });
 
 builder.Services.AddScoped<AuthService>();

@@ -4,58 +4,406 @@
 
 @inject AuthService AuthService
 @inject BlogService BlogService
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
 
+<h3>Gestión de Blogs</h3>
 
-<h3>Listado de Blogs</h3>
+<div class="row mb-3">
+    <div class="col-md-8">
+        <div class="input-group">
+            <input type="text" class="form-control" placeholder="Buscar por título..."
+                   @bind="TerminoBusqueda" @onkeypress="OnKeyPressBusqueda" />
+            <button class="btn btn-outline-secondary" type="button" @onclick="BuscarBlogs">
+                <i class="fas fa-search"></i> Buscar
+            </button>
+            <button class="btn btn-outline-secondary" type="button" @onclick="LimpiarBusqueda">
+                <i class="fas fa-times"></i> Limpiar
+            </button>
+        </div>
+    </div>
+    <div class="col-md-4 text-end">
+        <button class="btn btn-success" @onclick="MostrarModalCrear">
+            <i class="fas fa-plus"></i> Nuevo Blog
+        </button>
+    </div>
+</div>
 
-@if (Blogs == null)
+@if (CargandoBusqueda)
+{
+    <div class="text-center">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Buscando...</span>
+        </div>
+    </div>
+}
+else if (Blogs == null)
 {
     <p><em>Cargando blogs...</em></p>
 }
-else if (Blogs.Count == 0)
+else if (Blogs == null || Blogs.Count == 0)
 {
-    <p>No hay blogs disponibles.</p>
+    <div class="alert alert-info">
+        @if (!string.IsNullOrEmpty(TerminoBusqueda))
+        {
+            <text>No se encontraron blogs que coincidan con "<strong>@TerminoBusqueda</strong>".</text>
+        }
+        else
+        {
+            <text>No hay blogs disponibles.</text>
+        }
+    </div>
 }
 else
 {
-    <table class="table">
-        <thead>
+    <table class="table table-striped">
+        <thead class="table-dark">
             <tr>
+                <th>ID</th>
                 <th>Título</th>
                 <th>Autor</th>
+                <th>Descripción</th>
                 <th>Fecha</th>
                 <th>Usuario</th>
+                <th>Acciones</th>
             </tr>
         </thead>
         <tbody>
             @foreach (var blog in Blogs)
             {
                 <tr>
+                    <td>@blog.Id</td>
                     <td>@blog.Titulo</td>
                     <td>@blog.Autor</td>
+                    <td>@blog.Descripcion</td>
                     <td>@blog.FechaPublicacion.ToShortDateString()</td>
                     <td>@(blog.InfoUsuario?.NombreUsuario ?? "N/A")</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary me-1"
+                                @onclick="() => VerDetalleBlog(blog.Id)">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-warning me-1"
+                                @onclick="() => MostrarModalEditarBlog(blog)">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger"
+                                @onclick="() => ConfirmarEliminar(blog)">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
                 </tr>
             }
         </tbody>
     </table>
 }
 
+@if (!string.IsNullOrEmpty(MensajeError))
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        @MensajeError
+        <button type="button" class="btn-close" @onclick="() => MensajeError = string.Empty"></button>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(MensajeExito))
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        @MensajeExito
+        <button type="button" class="btn-close" @onclick="() => MensajeExito = string.Empty"></button>
+    </div>
+}
+
+<!-- Modal Crear Blog -->
+<div class="modal fade @(MostrarModalNuevo ? "show" : "")" style="display: @(MostrarModalNuevo ? "block" : "none")" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <EditForm Model="BlogNuevo" OnValidSubmit="CrearBlog">
+                <DataAnnotationsValidator />
+                <div class="modal-header">
+                    <h5 class="modal-title">Crear Nuevo Blog</h5>
+                    <button type="button" class="btn-close" @onclick="CerrarModalCrear"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Título <small class="text-muted">(máximo 100 caracteres)</small></label>
+                        <InputText class="form-control" @bind-Value="BlogNuevo.Titulo" maxlength="100" />
+                        <ValidationMessage For="@(() => BlogNuevo.Titulo)" />
+                        <div class="form-text">@(BlogNuevo.Titulo?.Length ?? 0)/100 caracteres</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Autor <small class="text-muted">(máximo 50 caracteres)</small></label>
+                        <InputText class="form-control" @bind-Value="BlogNuevo.Autor" maxlength="50" />
+                        <ValidationMessage For="@(() => BlogNuevo.Autor)" />
+                        <div class="form-text">@(BlogNuevo.Autor?.Length ?? 0)/50 caracteres</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descripción <small class="text-muted">(máximo 500 caracteres)</small></label>
+                        <InputTextArea class="form-control" rows="4" @bind-Value="BlogNuevo.Descripcion" maxlength="500" />
+                        <ValidationMessage For="@(() => BlogNuevo.Descripcion)" />
+                        <div class="form-text">@(BlogNuevo.Descripcion?.Length ?? 0)/500 caracteres</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CerrarModalCrear">Cancelar</button>
+                    <button type="submit" class="btn btn-success" disabled="@GuardandoBlog">
+                        @if (GuardandoBlog)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                        }
+                        Crear Blog
+                    </button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar Blog -->
+<div class="modal fade @(MostrarModalEditar ? "show" : "")" style="display: @(MostrarModalEditar ? "block" : "none")" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <EditForm Model="BlogEditando" OnValidSubmit="ModificarBlog">
+                <DataAnnotationsValidator />
+                <div class="modal-header">
+                    <h5 class="modal-title">Modificar Blog</h5>
+                    <button type="button" class="btn-close" @onclick="CerrarModalEditar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Título <small class="text-muted">(máximo 100 caracteres)</small></label>
+                        <InputText class="form-control" @bind-Value="BlogEditando.Titulo" maxlength="100" />
+                        <ValidationMessage For="@(() => BlogEditando.Titulo)" />
+                        <div class="form-text">@(BlogEditando.Titulo?.Length ?? 0)/100 caracteres</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Autor <small class="text-muted">(máximo 50 caracteres)</small></label>
+                        <InputText class="form-control" @bind-Value="BlogEditando.Autor" maxlength="50" />
+                        <ValidationMessage For="@(() => BlogEditando.Autor)" />
+                        <div class="form-text">@(BlogEditando.Autor?.Length ?? 0)/50 caracteres</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descripción <small class="text-muted">(máximo 500 caracteres)</small></label>
+                        <InputTextArea class="form-control" rows="4" @bind-Value="BlogEditando.Descripcion" maxlength="500" />
+                        <ValidationMessage For="@(() => BlogEditando.Descripcion)" />
+                        <div class="form-text">@(BlogEditando.Descripcion?.Length ?? 0)/500 caracteres</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CerrarModalEditar">Cancelar</button>
+                    <button type="submit" class="btn btn-warning" disabled="@GuardandoBlog">
+                        @if (GuardandoBlog)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                        }
+                        Modificar Blog
+                    </button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+@if (MostrarModalNuevo || MostrarModalEditar)
+{
+    <div class="modal-backdrop fade show"></div>
+}
+
 @code {
-     private List<BlogDTO>? Blogs;
+    private List<BlogDTO>? Blogs;
+    private string TerminoBusqueda = string.Empty;
+    private bool CargandoBusqueda = false;
+    private string MensajeError = string.Empty;
+    private string MensajeExito = string.Empty;
+
+    // Modal Crear
+    private bool MostrarModalNuevo = false;
+    private BlogCrearDTO BlogNuevo = new();
+    private bool GuardandoBlog = false;
+
+    // Modal Editar
+    private bool MostrarModalEditar = false;
+    private BlogModificarDTO BlogEditando = new();
+    private int BlogEditandoId = 0;
 
     protected override async Task OnInitializedAsync()
     {
-        // Verificar si hay token en almacenamiento
-        var token = await AuthService.GetToken();
+        await ConfigurarAutenticacion();
+        await CargarBlogs();
+    }
 
+    private async Task ConfigurarAutenticacion()
+    {
+        var token = await AuthService.GetToken();
         if (!string.IsNullOrEmpty(token))
         {
-            // Configura el HttpClient para usarlo
             await AuthService.SetToken(token);
         }
+    }
 
-        // Llama al servicio para obtener blogs
-        Blogs = await BlogService.ObtenerBlogsAsync();
+    private async Task CargarBlogs()
+    {
+        try
+        {
+            Blogs = await BlogService.ObtenerBlogsAsync();
+            if (Blogs == null)
+            {
+                Blogs = new List<BlogDTO>();
+                MensajeError = "No se pudieron cargar los blogs. Verifica tu conexión.";
+            }
+        }
+        catch (Exception ex)
+        {
+            MensajeError = $"Error al cargar blogs: {ex.Message}";
+            Blogs = new List<BlogDTO>();
+        }
+    }
+
+    private async Task BuscarBlogs()
+    {
+        CargandoBusqueda = true;
+        MensajeError = string.Empty; // Limpiar errores previos
+
+        try
+        {
+            if (string.IsNullOrWhiteSpace(TerminoBusqueda))
+            {
+                Blogs = await BlogService.ObtenerBlogsAsync();
+            }
+            else
+            {
+                Blogs = await BlogService.BuscarBlogsPorTituloAsync(TerminoBusqueda.Trim());
+            }
+
+            if (Blogs == null)
+            {
+                Blogs = new List<BlogDTO>();
+                MensajeError = "Error en la búsqueda. Intenta nuevamente.";
+            }
+        }
+        catch (Exception ex)
+        {
+            MensajeError = $"Error en la búsqueda: {ex.Message}";
+            Blogs = new List<BlogDTO>();
+        }
+        finally
+        {
+            CargandoBusqueda = false;
+        }
+    }
+
+    private async Task LimpiarBusqueda()
+    {
+        TerminoBusqueda = string.Empty;
+        await CargarBlogs();
+    }
+
+    private async Task OnKeyPressBusqueda(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await BuscarBlogs();
+        }
+    }
+
+    // Métodos del Modal Crear
+    private void MostrarModalCrear()
+    {
+        BlogNuevo = new BlogCrearDTO();
+        MostrarModalNuevo = true;
+    }
+
+    private void CerrarModalCrear()
+    {
+        MostrarModalNuevo = false;
+        BlogNuevo = new BlogCrearDTO();
+    }
+
+    private async Task CrearBlog()
+    {
+        GuardandoBlog = true;
+
+        var resultado = await BlogService.CrearBlogAsync(BlogNuevo);
+
+        if (resultado)
+        {
+            MensajeExito = "Blog creado exitosamente";
+            CerrarModalCrear();
+            await CargarBlogs();
+        }
+        else
+        {
+            MensajeError = "Error al crear el blog. Intenta nuevamente.";
+        }
+
+        GuardandoBlog = false;
+    }
+
+    // Métodos del Modal Editar
+    private void MostrarModalEditarBlog(BlogDTO blog)
+    {
+        BlogEditandoId = blog.Id;
+        BlogEditando = new BlogModificarDTO
+        {
+            Titulo = blog.Titulo ?? string.Empty,
+            Autor = blog.Autor ?? string.Empty,
+            Descripcion = blog.Descripcion ?? string.Empty
+        };
+        MostrarModalEditar = true;
+    }
+
+    private void CerrarModalEditar()
+    {
+        MostrarModalEditar = false;
+        BlogEditando = new BlogModificarDTO();
+        BlogEditandoId = 0;
+    }
+
+    private async Task ModificarBlog()
+    {
+        GuardandoBlog = true;
+
+        var resultado = await BlogService.ModificarBlogAsync(BlogEditandoId, BlogEditando);
+
+        if (resultado)
+        {
+            MensajeExito = "Blog modificado exitosamente";
+            CerrarModalEditar();
+            await CargarBlogs();
+        }
+        else
+        {
+            MensajeError = "Error al modificar el blog. Intenta nuevamente.";
+        }
+
+        GuardandoBlog = false;
+    }
+
+    // Método para ver detalles
+    private void VerDetalleBlog(int id)
+    {
+        Navigation.NavigateTo($"/blog/{id}");
+    }
+
+    // Método para confirmar eliminación
+    private async Task ConfirmarEliminar(BlogDTO blog)
+    {
+        var confirmado = await JSRuntime.InvokeAsync<bool>("confirm",
+            $"¿Estás seguro de que deseas eliminar el blog '{blog.Titulo}'?");
+
+        if (confirmado)
+        {
+            var resultado = await BlogService.EliminarBlogAsync(blog.Id);
+
+            if (resultado)
+            {
+                MensajeExito = $"Blog '{blog.Titulo}' eliminado exitosamente";
+                await CargarBlogs();
+            }
+            else
+            {
+                MensajeError = "Error al eliminar el blog. Intenta nuevamente.";
+            }
+        }
     }
 }
