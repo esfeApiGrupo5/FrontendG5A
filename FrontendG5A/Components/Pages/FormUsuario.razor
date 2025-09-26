@@ -9,20 +9,20 @@
 <div class="container my-4">
     <div class="row">
         <h1 class="mb-4 text-center text-primary fw-bold">Gestión de Usuarios</h1>
-        
+
         <div class="col-12 mb-4 p-4 rounded-3 shadow-sm" style="background-color: #f8f9fa;">
             <div class="d-flex align-items-center gap-3">
-                
+
                 <div class="flex-grow-1">
                     <label for="terminoBusqueda" class="form-label visually-hidden">Buscar por nombre</label>
-                    <input type="text" 
-                           class="form-control form-control-lg" 
+                    <input type="text"
+                           class="form-control form-control-lg"
                            id="terminoBusqueda"
                            placeholder="Buscar por nombre..."
-                           @bind="TerminoBusqueda" 
+                           @bind="TerminoBusqueda"
                            @onkeypress="OnKeyPressBusqueda" />
                 </div>
-                
+
                 <div class="d-flex gap-2">
                     <button class="btn btn-outline-primary btn-lg" type="button" @onclick="BuscarUsuarios">
                         <i class="bi bi-search"></i> Buscar
@@ -75,12 +75,12 @@
                                 <div class="card-body d-flex flex-column">
                                     <h5 class="card-title fw-bold text-primary">@usuario.Nombre</h5>
                                     <h6 class="card-subtitle mb-2 text-muted">ID: @usuario.Id</h6>
-                                    
+
                                     <p class="card-text">
                                         <strong>Correo:</strong> @usuario.Correo
                                     </p>
                                     <p class="card-text">
-                                        <strong>Estado:</strong> 
+                                        <strong>Estado:</strong>
                                         <span class="badge @(usuario.Estado == 1 ? "bg-success" : "bg-danger")">
                                             @usuario.EstadoTexto
                                         </span>
@@ -88,7 +88,7 @@
                                     <p class="card-text">
                                         <strong>Rol:</strong> @(usuario.Rol?.Nombre ?? "Sin rol")
                                     </p>
-                                    
+
                                     <div class="mt-auto d-grid gap-2">
                                         <button class="btn btn-outline-secondary" @onclick="() => VerDetalleUsuario(usuario.Id)">
                                             <i class="bi bi-eye"></i> Detalles
@@ -132,34 +132,34 @@
         <div class="modal-content card shadow-lg border-primary">
             <EditForm Model="UsuarioNuevo" OnValidSubmit="CrearUsuario">
                 <DataAnnotationsValidator />
-                
+
                 <div class="modal-header bg-primary text-white card-header">
                     <h5 class="modal-title mb-0 fw-bold">Crear Nuevo Usuario</h5>
                     <button type="button" class="btn-close btn-close-white" @onclick="CerrarModalCrear"></button>
                 </div>
-                
+
                 <div class="modal-body">
-                    
+
                     <div class="mb-3">
                         <label class="form-label fw-bold">Nombre <small class="text-muted">(entre 3 y 50 caracteres)</small></label>
-                        <InputText class="form-control" @bind-Value="UsuarioNuevo.Nombre" maxlength="50" placeholder="Nombre completo"/>
+                        <InputText class="form-control" @bind-Value="UsuarioNuevo.Nombre" maxlength="50" placeholder="Nombre completo" />
                         <ValidationMessage For="@(() => UsuarioNuevo.Nombre)" />
                         <div class="form-text">@(UsuarioNuevo.Nombre?.Length ?? 0)/50 caracteres</div>
                     </div>
-                    
+
                     <div class="mb-3">
                         <label class="form-label fw-bold">Correo Electrónico</label>
-                        <InputText class="form-control" @bind-Value="UsuarioNuevo.Correo" type="email" placeholder="usuario@ejemplo.com"/>
+                        <InputText class="form-control" @bind-Value="UsuarioNuevo.Correo" type="email" placeholder="usuario@ejemplo.com" />
                         <ValidationMessage For="@(() => UsuarioNuevo.Correo)" />
                     </div>
-                    
+
                     <div class="mb-3">
                         <label class="form-label fw-bold">Contraseña <small class="text-muted">(mínimo 6 caracteres)</small></label>
-                        <InputText class="form-control" type="password" @bind-Value="UsuarioNuevo.Password" maxlength="100" placeholder="Contraseña"/>
+                        <InputText class="form-control" type="password" @bind-Value="UsuarioNuevo.Password" maxlength="100" placeholder="Contraseña" />
                         <ValidationMessage For="@(() => UsuarioNuevo.Password)" />
                         <div class="form-text">@(UsuarioNuevo.Password?.Length ?? 0)/100 caracteres</div>
                     </div>
-                    
+
                     <div class="mb-3">
                         <label class="form-label fw-bold">Estado</label>
                         <InputSelect class="form-select" @bind-Value="UsuarioNuevo.Estado">
@@ -167,18 +167,22 @@
                             <option value="0">Inactivo</option>
                         </InputSelect>
                     </div>
-                    
+
                     <div class="mb-3">
                         <label class="form-label fw-bold">Rol</label>
-                        <InputNumber class="form-control" @bind-Value="UsuarioNuevo.IdRol" placeholder="ID del rol (ej: 1, 2, 3)"/>
+                        <InputSelect class="form-select" @bind-Value="UsuarioNuevo.IdRol">
+                            <option value="">Seleccione un rol</option>
+                            <option value="1">Cliente</option>
+                            <option value="2">Administrador</option>
+                        </InputSelect>
                         <ValidationMessage For="@(() => UsuarioNuevo.IdRol)" />
-                        <div class="form-text">Ingrese el ID del rol correspondiente</div>
+                        <div class="form-text">Seleccione el rol para el usuario</div>
                     </div>
-                    
+
                 </div>
-                
+
                 <div class="modal-footer d-flex justify-content-end gap-2">
-                    
+
                     <button type="button" class="btn btn-outline-secondary btn-lg" @onclick="CerrarModalCrear">
                         <i class="bi bi-x-circle"></i> Cancelar
                     </button>
@@ -202,34 +206,34 @@
         <div class="modal-content card shadow-lg border-primary">
             <EditForm Model="UsuarioEditando" OnValidSubmit="ModificarUsuario">
                 <DataAnnotationsValidator />
-                
+
                 <div class="modal-header bg-primary text-white card-header">
                     <h5 class="modal-title mb-0 fw-bold">Editar Usuario</h5>
                     <button type="button" class="btn-close btn-close-white" @onclick="CerrarModalEditar"></button>
                 </div>
-                
+
                 <div class="modal-body">
-                    
+
                     <div class="mb-3">
                         <label class="form-label fw-bold">Nombre <small class="text-muted">(entre 3 y 50 caracteres)</small></label>
                         <InputText class="form-control" @bind-Value="UsuarioEditando.Nombre" maxlength="50" placeholder="Nombre completo" />
                         <ValidationMessage For="@(() => UsuarioEditando.Nombre)" />
                         <div class="form-text">@(UsuarioEditando.Nombre?.Length ?? 0)/50 caracteres</div>
                     </div>
-                    
+
                     <div class="mb-3">
                         <label class="form-label fw-bold">Correo Electrónico</label>
                         <InputText class="form-control" @bind-Value="UsuarioEditando.Correo" type="email" placeholder="usuario@ejemplo.com" />
                         <ValidationMessage For="@(() => UsuarioEditando.Correo)" />
                     </div>
-                    
+
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Contraseña <small class="text-muted">(mínimo 6 caracteres)</small></label>
-                        <InputText class="form-control" type="password" @bind-Value="UsuarioEditando.Password" maxlength="100" placeholder="Nueva contraseña" />
+                        <label class="form-label fw-bold">Contraseña <small class="text-muted">(opcional - mínimo 6 caracteres si se proporciona)</small></label>
+                        <InputText class="form-control" type="password" @bind-Value="UsuarioEditando.Password" maxlength="100" placeholder="Dejar en blanco para mantener la contraseña actual" />
                         <ValidationMessage For="@(() => UsuarioEditando.Password)" />
-                        <div class="form-text">@(UsuarioEditando.Password?.Length ?? 0)/100 caracteres</div>
+                        <div class="form-text">@(UsuarioEditando.Password?.Length ?? 0)/100 caracteres - Dejar en blanco para no cambiar la contraseña</div>
                     </div>
-                    
+
                     <div class="mb-3">
                         <label class="form-label fw-bold">Estado</label>
                         <InputSelect class="form-select" @bind-Value="UsuarioEditando.Estado">
@@ -237,18 +241,22 @@
                             <option value="0">Inactivo</option>
                         </InputSelect>
                     </div>
-                    
+
                     <div class="mb-3">
                         <label class="form-label fw-bold">Rol</label>
-                        <InputNumber class="form-control" @bind-Value="UsuarioEditando.IdRol" placeholder="ID del rol (ej: 1, 2, 3)" />
+                        <InputSelect class="form-select" @bind-Value="UsuarioEditando.IdRol">
+                            <option value="">Seleccione un rol</option>
+                            <option value="1">Cliente</option>
+                            <option value="2">Administrador</option>
+                        </InputSelect>
                         <ValidationMessage For="@(() => UsuarioEditando.IdRol)" />
-                        <div class="form-text">Ingrese el ID del rol correspondiente</div>
+                        <div class="form-text">Seleccione el rol para el usuario</div>
                     </div>
-                    
+
                 </div>
-                
+
                 <div class="modal-footer d-flex justify-content-end gap-2">
-                    
+
                     <button type="button" class="btn btn-outline-secondary btn-lg" @onclick="CerrarModalEditar">
                         <i class="bi bi-x-circle"></i> Regresar
                     </button>

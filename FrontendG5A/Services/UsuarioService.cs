@@ -130,8 +130,36 @@ namespace FrontendG5A.Services
             try
             {
                 Console.WriteLine($"[API Update] Modificando usuario ID {usuarioModificar.Id} en: {UsuarioBaseEndpoint}");
-                var response = await _httpClient.PutAsJsonAsync(UsuarioBaseEndpoint, usuarioModificar);
+                Console.WriteLine($"[API Update] Enviando contraseña: {(string.IsNullOrWhiteSpace(usuarioModificar.Password) ? "NO" : "SI")}");
+
+                // Si la contraseña está vacía, no la enviamos al servidor
+                object usuarioParaEnviar;
+                if (string.IsNullOrWhiteSpace(usuarioModificar.Password))
+                {
+                    usuarioParaEnviar = new
+                    {
+                        id = usuarioModificar.Id,
+                        nombre = usuarioModificar.Nombre,
+                        correo = usuarioModificar.Correo,
+                        estado = usuarioModificar.Estado,
+                        idRol = usuarioModificar.IdRol
+                        // No incluir password
+                    };
+                }
+                else
+                {
+                    usuarioParaEnviar = usuarioModificar; // Enviar el DTO completo con contraseña
+                }
+
+                var response = await _httpClient.PutAsJsonAsync(UsuarioBaseEndpoint, usuarioParaEnviar);
                 Console.WriteLine($"[API Update] Respuesta: {response.StatusCode}");
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"[API Update Error] Error content: {errorContent}");
+                }
+
                 return response.IsSuccessStatusCode;
             }
             catch (HttpRequestException e)

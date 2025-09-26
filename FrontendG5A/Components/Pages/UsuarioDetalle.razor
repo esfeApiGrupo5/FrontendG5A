@@ -153,10 +153,10 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Contraseña <small class="text-muted">(mínimo 6 caracteres)</small></label>
-                        <InputText class="form-control" type="password" @bind-Value="UsuarioEditando.Password" maxlength="100" placeholder="Nueva contraseña" />
+                        <label class="form-label fw-bold">Contraseña <small class="text-muted">(opcional - mínimo 6 caracteres si se proporciona)</small></label>
+                        <InputText class="form-control" type="password" @bind-Value="UsuarioEditando.Password" maxlength="100" placeholder="Dejar en blanco para mantener la contraseña actual" />
                         <ValidationMessage For="@(() => UsuarioEditando.Password)" />
-                        <div class="form-text">@(UsuarioEditando.Password?.Length ?? 0)/100 caracteres</div>
+                        <div class="form-text">@(UsuarioEditando.Password?.Length ?? 0)/100 caracteres - Dejar en blanco para no cambiar la contraseña</div>
                     </div>
 
                     <div class="mb-3">
@@ -169,9 +169,13 @@
 
                     <div class="mb-3">
                         <label class="form-label fw-bold">Rol</label>
-                        <InputNumber class="form-control" @bind-Value="UsuarioEditando.IdRol" placeholder="ID del rol (ej: 1, 2, 3)" />
+                        <InputSelect class="form-select" @bind-Value="UsuarioEditando.IdRol">
+                            <option value="">Seleccione un rol</option>
+                            <option value="1">Cliente</option>
+                            <option value="2">Administrador</option>
+                        </InputSelect>
                         <ValidationMessage For="@(() => UsuarioEditando.IdRol)" />
-                        <div class="form-text">Ingrese el ID del rol correspondiente</div>
+                        <div class="form-text">Seleccione el rol para el usuario</div>
                     </div>
 
                 </div>

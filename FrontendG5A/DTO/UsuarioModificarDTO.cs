@@ -18,8 +18,7 @@ namespace FrontendG5A.DTO
         [JsonPropertyName("correo")]
         public string Correo { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "La contraseña es requerida")]
-        [StringLength(100, MinimumLength = 6, ErrorMessage = "La contraseña debe tener entre 6 y 100 caracteres")]
+        [OptionalStringLength(100, MinimumLength = 6, ErrorMessage = "La contraseña debe tener entre 6 y 100 caracteres")]
         [DataType(DataType.Password)]
         [JsonPropertyName("password")]
         public string Password { get; set; } = string.Empty;
@@ -30,5 +29,48 @@ namespace FrontendG5A.DTO
         [Required(ErrorMessage = "El rol es requerido")]
         [JsonPropertyName("idRol")]
         public int IdRol { get; set; }
+    }
+    // Validador personalizado que solo valida si el campo tiene contenido
+    public class OptionalStringLengthAttribute : ValidationAttribute
+    {
+        private readonly int _maximumLength;
+        private readonly int _minimumLength;
+
+        public OptionalStringLengthAttribute(int maximumLength)
+        {
+            _maximumLength = maximumLength;
+            _minimumLength = 0;
+        }
+
+        public int MinimumLength
+        {
+            get => _minimumLength;
+            init => _minimumLength = value;
+        }
+
+        public int MaximumLength => _maximumLength;
+
+        public override bool IsValid(object? value)
+        {
+            // Si el valor es null o cadena vacía, es válido (campo opcional)
+            if (value == null || (value is string str && string.IsNullOrWhiteSpace(str)))
+            {
+                return true;
+            }
+
+            // Si tiene contenido, aplicar validación de longitud
+            if (value is string stringValue)
+            {
+                var length = stringValue.Length;
+                return length >= _minimumLength && length <= _maximumLength;
+            }
+
+            return false;
+        }
+
+        public override string FormatErrorMessage(string name)
+        {
+            return ErrorMessage ?? $"El campo {name} debe tener entre {_minimumLength} y {_maximumLength} caracteres.";
+        }
     }
 }
