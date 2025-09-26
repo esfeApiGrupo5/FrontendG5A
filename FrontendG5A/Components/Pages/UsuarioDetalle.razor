@@ -1,0 +1,372 @@
+﻿@page "/usuario/{id:int}"
+@using FrontendG5A.DTO
+@using FrontendG5A.Services
+
+@inject UsuarioService UsuarioService
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<div class="container py-5">
+
+    @if (Usuario == null)
+    {
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                @if (CargandoUsuario)
+                {
+                    <div class="text-center p-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Cargando usuario...</span>
+                        </div>
+                        <p class="mt-2 text-primary">Cargando detalles del usuario...</p>
+                    </div>
+                }
+                else if (UsuarioNoEncontrado)
+                {
+                    <div class="alert alert-warning shadow-sm">
+                        <h4 class="alert-heading fw-bold">Usuario no encontrado 😕</h4>
+                        <p>El usuario con ID @Id no existe o no está disponible.</p>
+                        <hr>
+                        <button class="btn btn-primary" @onclick="VolverALista">
+                            <i class="bi bi-arrow-left"></i> Volver a la lista
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+
+                <div class="card shadow-lg border-primary">
+
+                    <div class="card-header bg-primary text-white">
+                        <h2 class="card-title mb-0 fw-bold">Detalles del Usuario</h2>
+                    </div>
+
+                    <div class="card-body">
+                        <dl class="row mb-4">
+                            <dt class="col-sm-3 fw-bold text-primary">ID</dt>
+                            <dd class="col-sm-9">@Usuario.Id</dd>
+
+                            <dt class="col-sm-3 fw-bold text-primary">Nombre</dt>
+                            <dd class="col-sm-9">@Usuario.Nombre</dd>
+
+                            <dt class="col-sm-3 fw-bold text-primary">Correo Electrónico</dt>
+                            <dd class="col-sm-9">@Usuario.Correo</dd>
+
+                            <dt class="col-sm-3 fw-bold text-primary">Estado</dt>
+                            <dd class="col-sm-9">
+                                <span class="badge @(Usuario.Estado == 1 ? "bg-success" : "bg-danger") fs-6">
+                                    @Usuario.EstadoTexto
+                                </span>
+                            </dd>
+
+                            <dt class="col-sm-3 fw-bold text-primary">Rol</dt>
+                            <dd class="col-sm-9">
+                                @if (Usuario.Rol != null)
+                                {
+                                    <span class="badge bg-info fs-6">@Usuario.Rol.Nombre</span>
+                                    <small class="text-muted ms-2">(ID: @Usuario.Rol.Id)</small>
+                                }
+                                else
+                                {
+                                    <span class="text-muted fst-italic">Sin rol asignado</span>
+                                }
+                            </dd>
+                        </dl>
+
+                        <hr class="my-4">
+
+                        <div class="alert alert-info">
+                            <h5 class="alert-heading"><i class="bi bi-info-circle"></i> Información del Usuario</h5>
+                            <p class="mb-2"><strong>Nombre:</strong> @Usuario.Nombre</p>
+                            <p class="mb-2"><strong>Contacto:</strong> @Usuario.Correo</p>
+                            <p class="mb-2"><strong>Estado de cuenta:</strong> @Usuario.EstadoTexto</p>
+                            <p class="mb-0"><strong>Permisos:</strong> @(Usuario.Rol?.Nombre ?? "Sin rol definido")</p>
+                        </div>
+                    </div>
+
+                    <div class="card-footer d-flex justify-content-end gap-2">
+                        <button class="btn btn-outline-primary btn-lg" @onclick="MostrarModalEditar">
+                            <i class="bi bi-pencil-square"></i> Editar
+                        </button>
+
+                        <button class="btn btn-outline-danger btn-lg" @onclick="EliminarUsuario">
+                            <i class="bi bi-trash"></i> Eliminar
+                        </button>
+
+                        <button class="btn btn-outline-secondary btn-lg" @onclick="VolverALista">
+                            <i class="bi bi-arrow-left-circle"></i> Regresar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@if (!string.IsNullOrEmpty(MensajeError))
+{
+    <div class="alert alert-danger alert-dismissible fade show mt-3">
+        @MensajeError
+        <button type="button" class="btn-close" @onclick="() => MensajeError = string.Empty"></button>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(MensajeExito))
+{
+    <div class="alert alert-success alert-dismissible fade show mt-3">
+        @MensajeExito
+        <button type="button" class="btn-close" @onclick="() => MensajeExito = string.Empty"></button>
+    </div>
+}
+
+<!-- Modal Editar Usuario -->
+<div class="modal fade @(MostrarModalEditarVisible ? "show" : "")" style="display: @(MostrarModalEditarVisible ? "block" : "none"); background-color: rgba(0,0,0,0.5);" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content card shadow-lg border-primary">
+            <EditForm Model="UsuarioEditando" OnValidSubmit="GuardarCambios">
+                <DataAnnotationsValidator />
+
+                <div class="modal-header bg-primary text-white card-header">
+                    <h5 class="modal-title mb-0 fw-bold">Editar Usuario: @UsuarioEditando?.Nombre</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CerrarModalEditar"></button>
+                </div>
+
+                <div class="modal-body">
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Nombre <small class="text-muted">(entre 3 y 50 caracteres)</small></label>
+                        <InputText class="form-control" @bind-Value="UsuarioEditando.Nombre" maxlength="50" placeholder="Nombre completo" />
+                        <ValidationMessage For="@(() => UsuarioEditando.Nombre)" />
+                        <div class="form-text">@(UsuarioEditando.Nombre?.Length ?? 0)/50 caracteres</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Correo Electrónico</label>
+                        <InputText class="form-control" @bind-Value="UsuarioEditando.Correo" type="email" placeholder="usuario@ejemplo.com" />
+                        <ValidationMessage For="@(() => UsuarioEditando.Correo)" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Contraseña <small class="text-muted">(mínimo 6 caracteres)</small></label>
+                        <InputText class="form-control" type="password" @bind-Value="UsuarioEditando.Password" maxlength="100" placeholder="Nueva contraseña" />
+                        <ValidationMessage For="@(() => UsuarioEditando.Password)" />
+                        <div class="form-text">@(UsuarioEditando.Password?.Length ?? 0)/100 caracteres</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Estado</label>
+                        <InputSelect class="form-select" @bind-Value="UsuarioEditando.Estado">
+                            <option value="1">Activo</option>
+                            <option value="0">Inactivo</option>
+                        </InputSelect>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Rol</label>
+                        <InputNumber class="form-control" @bind-Value="UsuarioEditando.IdRol" placeholder="ID del rol (ej: 1, 2, 3)" />
+                        <ValidationMessage For="@(() => UsuarioEditando.IdRol)" />
+                        <div class="form-text">Ingrese el ID del rol correspondiente</div>
+                    </div>
+
+                </div>
+
+                <div class="modal-footer d-flex justify-content-end gap-2">
+
+                    <button type="button" class="btn btn-outline-secondary btn-lg" @onclick="CerrarModalEditar">
+                        <i class="bi bi-x-circle"></i> Regresar
+                    </button>
+
+                    <button type="submit" class="btn btn-outline-primary btn-lg" disabled="@GuardandoCambios">
+                        @if (GuardandoCambios)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        }
+                        <i class="bi bi-save"></i> Guardar Cambios
+                    </button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+@if (MostrarModalEditarVisible)
+{
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private UsuarioDTO? Usuario;
+    private bool CargandoUsuario = true;
+    private bool UsuarioNoEncontrado = false;
+    private string MensajeError = string.Empty;
+    private string MensajeExito = string.Empty;
+
+    // Modal Editar
+    private bool MostrarModalEditarVisible = false;
+    private UsuarioModificarDTO UsuarioEditando = new();
+    private bool GuardandoCambios = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ConfigurarAutenticacion();
+        await CargarUsuario();
+    }
+
+    private async Task ConfigurarAutenticacion()
+    {
+        var token = await AuthService.GetToken();
+        if (!string.IsNullOrEmpty(token))
+        {
+            await AuthService.SetToken(token);
+        }
+    }
+
+    private async Task CargarUsuario()
+    {
+        CargandoUsuario = true;
+        UsuarioNoEncontrado = false;
+
+        try
+        {
+            Console.WriteLine($"[UsuarioDetail] Cargando usuario ID: {Id}");
+            Usuario = await UsuarioService.ObtenerUsuarioPorIdAsync(Id);
+
+            if (Usuario == null)
+            {
+                Console.WriteLine($"[UsuarioDetail] Usuario ID {Id} no encontrado");
+                UsuarioNoEncontrado = true;
+            }
+            else
+            {
+                Console.WriteLine($"[UsuarioDetail] Usuario cargado: {Usuario.Nombre}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[UsuarioDetail Error] Error al cargar usuario: {ex.Message}");
+            MensajeError = $"Error al cargar el usuario: {ex.Message}";
+            UsuarioNoEncontrado = true;
+        }
+        finally
+        {
+            CargandoUsuario = false;
+        }
+    }
+
+    private void VolverALista()
+    {
+        Navigation.NavigateTo("/usuarios");
+    }
+
+    // Métodos del Modal Editar
+    private void MostrarModalEditar()
+    {
+        if (Usuario == null) return;
+
+        Console.WriteLine($"[UsuarioDetail] Abriendo modal de edición para usuario ID: {Usuario.Id}");
+        UsuarioEditando = new UsuarioModificarDTO
+        {
+            Id = Usuario.Id,
+            Nombre = Usuario.Nombre ?? string.Empty,
+            Correo = Usuario.Correo ?? string.Empty,
+            Password = string.Empty, // Se debe ingresar una nueva contraseña
+            Estado = Usuario.Estado,
+            IdRol = Usuario.Rol?.Id ?? 1
+        };
+        MostrarModalEditarVisible = true;
+        StateHasChanged();
+    }
+
+    private void CerrarModalEditar()
+    {
+        MostrarModalEditarVisible = false;
+        UsuarioEditando = new UsuarioModificarDTO();
+        MensajeError = string.Empty;
+        StateHasChanged();
+    }
+
+    private async Task GuardarCambios()
+    {
+        if (Usuario == null) return;
+
+        GuardandoCambios = true;
+        StateHasChanged();
+
+        try
+        {
+            Console.WriteLine($"[UsuarioDetail] Guardando cambios para usuario ID: {Usuario.Id}");
+            var resultado = await UsuarioService.ModificarUsuarioAsync(UsuarioEditando);
+
+            if (resultado)
+            {
+                Console.WriteLine($"[UsuarioDetail] Usuario modificado exitosamente");
+                MensajeExito = "Usuario modificado exitosamente";
+
+                // Actualizar los datos del usuario en la vista
+                Usuario.Nombre = UsuarioEditando.Nombre;
+                Usuario.Correo = UsuarioEditando.Correo;
+                Usuario.Estado = UsuarioEditando.Estado;
+                // Nota: El rol no se actualiza automáticamente, se necesitaría recargar desde la API
+
+                CerrarModalEditar();
+            }
+            else
+            {
+                Console.WriteLine($"[UsuarioDetail] Error al modificar usuario");
+                MensajeError = "Error al modificar el usuario. Intenta nuevamente.";
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[UsuarioDetail Error] Error al guardar: {ex.Message}");
+            MensajeError = $"Error al guardar los cambios: {ex.Message}";
+        }
+        finally
+        {
+            GuardandoCambios = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task EliminarUsuario()
+    {
+        if (Usuario == null) return;
+
+        try
+        {
+            var confirmado = await JSRuntime.InvokeAsync<bool>("confirm",
+                $"¿Estás seguro de que deseas eliminar el usuario '{Usuario.Nombre}'? Esta acción no se puede deshacer.");
+
+            if (confirmado)
+            {
+                Console.WriteLine($"[UsuarioDetail] Eliminando usuario ID: {Usuario.Id}");
+                var resultado = await UsuarioService.EliminarUsuarioAsync(Usuario.Id);
+
+                if (resultado)
+                {
+                    Console.WriteLine($"[UsuarioDetail] Usuario eliminado exitosamente");
+                    // Redirigir a la lista después de eliminar
+                    Navigation.NavigateTo("/usuarios");
+                }
+                else
+                {
+                    Console.WriteLine($"[UsuarioDetail] Error al eliminar usuario");
+                    MensajeError = "Error al eliminar el usuario. Intenta nuevamente.";
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[UsuarioDetail Error] Error al eliminar: {ex.Message}");
+            MensajeError = $"Error al eliminar el usuario: {ex.Message}";
+        }
+    }
+}
