@@ -7,129 +7,96 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 
-<div class="container mt-4">
+<div class="container py-5">
+
     @if (Blog == null)
     {
-        @if (CargandoBlog)
-        {
-            <div class="text-center">
-                <div class="spinner-border" role="status">
-                    <span class="visually-hidden">Cargando blog...</span>
-                </div>
-                <p class="mt-2">Cargando detalles del blog...</p>
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                @if (CargandoBlog)
+                {
+                    <div class="text-center p-5">
+                        <div class="spinner-border text-success" role="status">
+                            <span class="visually-hidden">Cargando blog...</span>
+                        </div>
+                        <p class="mt-2 text-success">Cargando detalles del blog...</p>
+                    </div>
+                }
+                else if (BlogNoEncontrado)
+                {
+                    <div class="alert alert-warning shadow-sm">
+                        <h4 class="alert-heading fw-bold">Blog no encontrado 😕</h4>
+                        <p>El blog con ID @Id no existe o no está disponible.</p>
+                        <hr>
+                        <button class="btn btn-primary" @onclick="VolverALista">
+                            <i class="bi bi-arrow-left"></i> Volver a la lista
+                        </button>
+                    </div>
+                }
             </div>
-        }
-        else if (BlogNoEncontrado)
-        {
-            <div class="alert alert-warning">
-                <h4 class="alert-heading">Blog no encontrado</h4>
-                <p>El blog con ID @Id no existe o no está disponible.</p>
-                <hr>
-                <button class="btn btn-primary" @onclick="VolverALista">
-                    <i class="bi bi-arrow-left"></i> Volver a la lista
-                </button>
-            </div>
-        }
+        </div>
     }
     else
     {
-        <div class="row">
-            <div class="col-12">
-                <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb">
-                        <li class="breadcrumb-item">
-                            <a href="/blog" class="text-decoration-none">Blogs</a>
-                        </li>
-                        <li class="breadcrumb-item active" aria-current="page">@Blog.Titulo</li>
-                    </ol>
-                </nav>
-            </div>
-        </div>
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                
+                <div class="card shadow-lg border-success">
+                    
+                    <div class="card-header bg-success text-white">
+                        <h2 class="card-title mb-0 fw-bold">Detalles del Blog</h2>
+                    </div>
+                    
+                    <div class="card-body">
+                        <dl class="row mb-4">
+                            <dt class="col-sm-3 fw-bold text-success">ID</dt>
+                            <dd class="col-sm-9">@Blog.Id</dd>
 
-        <div class="row">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header bg-primary text-white">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h1 class="h3 mb-0">@Blog.Titulo</h1>
-                            <button class="btn btn-light btn-sm" @onclick="VolverALista">
-                                <i class="bi bi-arrow-left"></i> Volver
-                            </button>
+                            <dt class="col-sm-3 fw-bold text-success">Autor</dt>
+                            <dd class="col-sm-9">@Blog.Autor</dd>
+                            
+                            <dt class="col-sm-3 fw-bold text-success">Fecha Publicación</dt>
+                            <dd class="col-sm-9">@Blog.FechaPublicacion.ToString("dd/MM/yyyy HH:mm")</dd>
+                            
+                            @if (Blog.InfoUsuario != null)
+                            {
+                                <dt class="col-sm-3 fw-bold text-success">Usuario</dt>
+                                <dd class="col-sm-9">@Blog.InfoUsuario.NombreUsuario</dd>
+                            }
+                        </dl>
+                        
+                        <hr class="my-4">
+
+                        <h4 class="fw-bold text-success mb-3">@Blog.Titulo</h4>
+                        <div class="blog-content p-3 border rounded bg-light">
+                            @if (!string.IsNullOrEmpty(Blog.Descripcion))
+                            {
+                                @foreach (var parrafo in Blog.Descripcion.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+                                {
+                                    <p class="mb-3">@parrafo</p>
+                                }
+                            }
+                            else
+                            {
+                                <p class="text-muted fst-italic">Este blog no tiene descripción disponible.</p>
+                            }
                         </div>
                     </div>
-                    <div class="card-body">
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <h6 class="text-muted">Información del Blog</h6>
-                                <table class="table table-sm">
-                                    <tr>
-                                        <td><strong>ID:</strong></td>
-                                        <td>@Blog.Id</td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Autor:</strong></td>
-                                        <td>@Blog.Autor</td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Fecha de Publicación:</strong></td>
-                                        <td>@Blog.FechaPublicacion.ToString("dd/MM/yyyy HH:mm")</td>
-                                    </tr>
-                                    @if (Blog.InfoUsuario != null)
-                                    {
-                                        <tr>
-                                            <td><strong>Usuario:</strong></td>
-                                            <td>@Blog.InfoUsuario.NombreUsuario</td>
-                                        </tr>
-                                        @if (!string.IsNullOrEmpty(Blog.InfoUsuario.CorreoElectronico))
-                                        {
-                                            <tr>
-                                                <td><strong>Correo:</strong></td>
-                                                <td>@Blog.InfoUsuario.CorreoElectronico</td>
-                                            </tr>
-                                        }
-                                    }
-                                </table>
-                            </div>
-                            <div class="col-md-6">
-                                <h6 class="text-muted">Acciones</h6>
-                                <div class="btn-group" role="group">
-                                    <button class="btn btn-outline-warning" @onclick="MostrarModalEditar">
-                                        <i class="bi bi-pencil"></i> Editar
-                                    </button>
-                                    <button class="btn btn-outline-danger" @onclick="EliminarBlog">
-                                        <i class="bi bi-trash"></i> Eliminar
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <hr>
-
-                        <div class="content-section">
-                            <h6 class="text-muted mb-3">Contenido</h6>
-                            <div class="blog-content">
-                                @if (!string.IsNullOrEmpty(Blog.Descripcion))
-                                {
-                                    <div class="card bg-light">
-                                        <div class="card-body">
-                                            @foreach (var parrafo in Blog.Descripcion.Split('\n', StringSplitOptions.RemoveEmptyEntries))
-                                            {
-                                                <p class="mb-3">@parrafo</p>
-                                            }
-                                        </div>
-                                    </div>
-                                }
-                                else
-                                {
-                                    <p class="text-muted fst-italic">Este blog no tiene descripción disponible.</p>
-                                }
-                            </div>
-                        </div>
+                    
+                    <div class="card-footer d-flex justify-content-end gap-2">
+                        <button class="btn btn-outline-primary btn-lg" @onclick="MostrarModalEditar">
+                            <i class="bi bi-pencil-square"></i> Editar
+                        </button>
+                        
+                        <button class="btn btn-outline-secondary btn-lg" @onclick="VolverALista">
+                            <i class="bi bi-arrow-left-circle"></i> Regresar
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
     }
+</div>
 
     @if (!string.IsNullOrEmpty(MensajeError))
     {
@@ -146,46 +113,56 @@
             <button type="button" class="btn-close" @onclick="() => MensajeExito = string.Empty"></button>
         </div>
     }
-</div>
 
 <!-- Modal Editar Blog -->
-<div class="modal fade @(MostrarModalEditarVisible ? "show" : "")" style="display: @(MostrarModalEditarVisible ? "block" : "none")" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
+<div class="modal fade @(MostrarModalEditarVisible ? "show" : "")" style="display: @(MostrarModalEditarVisible ? "block" : "none"); background-color: rgba(0,0,0,0.5);" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content card shadow-lg border-success">
             <EditForm Model="BlogEditando" OnValidSubmit="GuardarCambios">
                 <DataAnnotationsValidator />
-                <div class="modal-header">
-                    <h5 class="modal-title">Editar Blog: @Blog?.Titulo</h5>
-                    <button type="button" class="btn-close" @onclick="CerrarModalEditar"></button>
+                
+                <div class="modal-header bg-success text-white card-header">
+                    <h5 class="modal-title mb-0 fw-bold">Editar Blog: @BlogEditando?.Titulo</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CerrarModalEditar"></button>
                 </div>
+                
                 <div class="modal-body">
+                    
                     <div class="mb-3">
-                        <label class="form-label">Título <small class="text-muted">(máximo 100 caracteres)</small></label>
-                        <InputText class="form-control" @bind-Value="BlogEditando.Titulo" maxlength="100" />
+                        <label class="form-label fw-bold">Título <small class="text-muted">(máximo 100 caracteres)</small></label>
+                        <InputText class="form-control" @bind-Value="BlogEditando.Titulo" maxlength="100" placeholder="Título del blog" />
                         <ValidationMessage For="@(() => BlogEditando.Titulo)" />
                         <div class="form-text">@(BlogEditando.Titulo?.Length ?? 0)/100 caracteres</div>
                     </div>
+                    
                     <div class="mb-3">
-                        <label class="form-label">Autor <small class="text-muted">(máximo 50 caracteres)</small></label>
-                        <InputText class="form-control" @bind-Value="BlogEditando.Autor" maxlength="50" />
+                        <label class="form-label fw-bold">Autor <small class="text-muted">(máximo 50 caracteres)</small></label>
+                        <InputText class="form-control" @bind-Value="BlogEditando.Autor" maxlength="50" placeholder="Autor" />
                         <ValidationMessage For="@(() => BlogEditando.Autor)" />
                         <div class="form-text">@(BlogEditando.Autor?.Length ?? 0)/50 caracteres</div>
                     </div>
+                    
                     <div class="mb-3">
-                        <label class="form-label">Descripción <small class="text-muted">(máximo 500 caracteres)</small></label>
-                        <InputTextArea class="form-control" rows="6" @bind-Value="BlogEditando.Descripcion" maxlength="500" />
+                        <label class="form-label fw-bold">Descripción <small class="text-muted">(máximo 500 caracteres)</small></label>
+                        <InputTextArea class="form-control" rows="4" @bind-Value="BlogEditando.Descripcion" maxlength="500" placeholder="Descripción del blog" />
                         <ValidationMessage For="@(() => BlogEditando.Descripcion)" />
                         <div class="form-text">@(BlogEditando.Descripcion?.Length ?? 0)/500 caracteres</div>
                     </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="CerrarModalEditar">Cancelar</button>
-                    <button type="submit" class="btn btn-warning" disabled="@GuardandoCambios">
+                    
+                    </div>
+                
+                <div class="modal-footer d-flex justify-content-end gap-2">
+                    
+                    <button type="button" class="btn btn-outline-secondary btn-lg" @onclick="CerrarModalEditar">
+                        <i class="bi bi-x-circle"></i> Regresar
+                    </button>
+
+                    <button type="submit" class="btn btn-outline-success btn-lg" disabled="@GuardandoCambios">
                         @if (GuardandoCambios)
                         {
-                            <span class="spinner-border spinner-border-sm me-2"></span>
+                            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
                         }
-                        Guardar Cambios
+                        <i class="bi bi-save"></i> Guardar Cambios
                     </button>
                 </div>
             </EditForm>

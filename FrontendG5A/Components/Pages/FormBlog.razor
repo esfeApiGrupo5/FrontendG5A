@@ -1,102 +1,106 @@
 ﻿@page "/blog"
 @using FrontendG5A.DTO
 @using FrontendG5A.Services
-
 @inject AuthService AuthService
 @inject BlogService BlogService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
-
-<h3>Gestión de Blogs</h3>
-
-<div class="row mb-3">
-    <div class="col-md-8">
-        <div class="input-group">
-            <input type="text" class="form-control" placeholder="Buscar por título..."
-                   @bind="TerminoBusqueda" @onkeypress="OnKeyPressBusqueda" />
-            <button class="btn btn-outline-secondary" type="button" @onclick="BuscarBlogs">
-                <i class="fas fa-search"></i> Buscar
-            </button>
-            <button class="btn btn-outline-secondary" type="button" @onclick="LimpiarBusqueda">
-                <i class="fas fa-times"></i> Limpiar
-            </button>
+<div class="container my-4">
+    <div class="row">
+        <h1 class="mb-4 text-center text-success fw-bold">Gestión de Blogs</h1>
+        
+        <div class="col-12 mb-4 p-4 rounded-3 shadow-sm" style="background-color: #f8f9fa;">
+            <div class="d-flex align-items-center gap-3">
+                
+                <div class="flex-grow-1">
+                    <label for="terminoBusqueda" class="form-label visually-hidden">Buscar por título</label>
+                    <input type="text" 
+                           class="form-control form-control-lg" 
+                           id="terminoBusqueda"
+                           placeholder="Buscar por título..."
+                           @bind="TerminoBusqueda" 
+                           @onkeypress="OnKeyPressBusqueda" />
+                </div>
+                
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-primary btn-lg" type="button" @onclick="BuscarBlogs">
+                        <i class="bi bi-search"></i> Buscar
+                    </button>
+                    <button class="btn btn-outline-secondary btn-lg" type="button" @onclick="LimpiarBusqueda">
+                        <i class="bi bi-x-circle"></i> Limpiar
+                    </button>
+                    @* Asumiendo que el usuario es "admin" para mostrar el botón de crear, similar a la lógica de Thymeleaf *@
+                    <button class="btn btn-outline-success btn-lg" @onclick="MostrarModalCrear">
+                        <i class="bi bi-plus-circle"></i> Nuevo
+                    </button>
+                </div>
+            </div>
         </div>
-    </div>
-    <div class="col-md-4 text-end">
-        <button class="btn btn-success" @onclick="MostrarModalCrear">
-            <i class="fas fa-plus"></i> Nuevo Blog
-        </button>
+
+        <div class="col-12">
+            @if (CargandoBusqueda)
+            {
+                <div class="text-center p-5">
+                    <div class="spinner-border text-success" role="status">
+                        <span class="visually-hidden">Buscando...</span>
+                    </div>
+                    <p class="mt-2 text-success">Buscando...</p>
+                </div>
+            }
+            else if (Blogs == null)
+            {
+                <p class="alert alert-info p-3"><em>Cargando blogs...</em></p>
+            }
+            else if (Blogs.Count == 0)
+            {
+                <div class="alert alert-info alert-dismissible fade show" role="alert">
+                    @if (!string.IsNullOrEmpty(TerminoBusqueda))
+                    {
+                        <text>No se encontraron blogs que coincidan con "<strong>@TerminoBusqueda</strong>".</text>
+                    }
+                    else
+                    {
+                        <text>No hay blogs disponibles. ¡Sé el primero en crear uno! 🚀</text>
+                    }
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+            else
+            {
+                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                    @foreach (var blog in Blogs)
+                    {
+                        <div class="col">
+                            <div class="card h-100 border-success shadow-lg">
+                                <div class="card-body d-flex flex-column">
+                                    <h5 class="card-title fw-bold text-success">@blog.Titulo</h5>
+                                    <h6 class="card-subtitle mb-2 text-muted">ID: @blog.Id</h6>
+                                    
+                                    <p class="card-text">Autor: <strong>@blog.Autor</strong></p>
+                                    <p class="card-text">Fecha: @blog.FechaPublicacion.ToString("dd/MM/yyyy HH:mm")</p>
+                                    <p class="card-text">Usuario: @(blog.InfoUsuario?.NombreUsuario ?? "N/A")</p>
+                                    <p class="card-text">Descripción: @blog.Descripcion</p>
+                                    
+                                    <div class="mt-auto d-grid gap-2">
+                                        <button class="btn btn-outline-secondary" @onclick="() => VerDetalleBlog(blog.Id)">
+                                            <i class="bi bi-eye"></i> Detalles
+                                        </button>
+                                        <button class="btn btn-outline-warning text-dark" @onclick="() => MostrarModalEditarBlog(blog)">
+                                            <i class="bi bi-pencil-square"></i> Editar
+                                        </button>
+                                        <button class="btn btn-outline-danger" @onclick="() => ConfirmarEliminar(blog)">
+                                            <i class="bi bi-trash"></i> Eliminar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
     </div>
 </div>
-
-@if (CargandoBusqueda)
-{
-    <div class="text-center">
-        <div class="spinner-border" role="status">
-            <span class="visually-hidden">Buscando...</span>
-        </div>
-    </div>
-}
-else if (Blogs == null)
-{
-    <p><em>Cargando blogs...</em></p>
-}
-else if (Blogs == null || Blogs.Count == 0)
-{
-    <div class="alert alert-info">
-        @if (!string.IsNullOrEmpty(TerminoBusqueda))
-        {
-            <text>No se encontraron blogs que coincidan con "<strong>@TerminoBusqueda</strong>".</text>
-        }
-        else
-        {
-            <text>No hay blogs disponibles.</text>
-        }
-    </div>
-}
-else
-{
-    <table class="table table-striped">
-        <thead class="table-dark">
-            <tr>
-                <th>ID</th>
-                <th>Título</th>
-                <th>Autor</th>
-                <th>Descripción</th>
-                <th>Fecha</th>
-                <th>Usuario</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var blog in Blogs)
-            {
-                <tr>
-                    <td>@blog.Id</td>
-                    <td>@blog.Titulo</td>
-                    <td>@blog.Autor</td>
-                    <td>@blog.Descripcion</td>
-                    <td>@blog.FechaPublicacion.ToShortDateString()</td>
-                    <td>@(blog.InfoUsuario?.NombreUsuario ?? "N/A")</td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-primary me-1"
-                                @onclick="() => VerDetalleBlog(blog.Id)">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-warning me-1"
-                                @onclick="() => MostrarModalEditarBlog(blog)">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-danger"
-                                @onclick="() => ConfirmarEliminar(blog)">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-}
 
 @if (!string.IsNullOrEmpty(MensajeError))
 {
@@ -115,43 +119,54 @@ else
 }
 
 <!-- Modal Crear Blog -->
-<div class="modal fade @(MostrarModalNuevo ? "show" : "")" style="display: @(MostrarModalNuevo ? "block" : "none")" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
+<div class="modal fade @(MostrarModalNuevo ? "show" : "")" style="display: @(MostrarModalNuevo ? "block" : "none"); background-color: rgba(0,0,0,0.5);" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content card shadow-lg border-success">
             <EditForm Model="BlogNuevo" OnValidSubmit="CrearBlog">
                 <DataAnnotationsValidator />
-                <div class="modal-header">
-                    <h5 class="modal-title">Crear Nuevo Blog</h5>
-                    <button type="button" class="btn-close" @onclick="CerrarModalCrear"></button>
+                
+                <div class="modal-header bg-success text-white card-header">
+                    <h5 class="modal-title mb-0 fw-bold">Crear Nuevo Blog</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CerrarModalCrear"></button>
                 </div>
+                
                 <div class="modal-body">
+                    
                     <div class="mb-3">
-                        <label class="form-label">Título <small class="text-muted">(máximo 100 caracteres)</small></label>
-                        <InputText class="form-control" @bind-Value="BlogNuevo.Titulo" maxlength="100" />
+                        <label class="form-label fw-bold">Título <small class="text-muted">(máximo 100 caracteres)</small></label>
+                        <InputText class="form-control" @bind-Value="BlogNuevo.Titulo" maxlength="100" placeholder="Título del blog"/>
                         <ValidationMessage For="@(() => BlogNuevo.Titulo)" />
                         <div class="form-text">@(BlogNuevo.Titulo?.Length ?? 0)/100 caracteres</div>
                     </div>
+                    
                     <div class="mb-3">
-                        <label class="form-label">Autor <small class="text-muted">(máximo 50 caracteres)</small></label>
-                        <InputText class="form-control" @bind-Value="BlogNuevo.Autor" maxlength="50" />
+                        <label class="form-label fw-bold">Autor <small class="text-muted">(máximo 50 caracteres)</small></label>
+                        <InputText class="form-control" @bind-Value="BlogNuevo.Autor" maxlength="50" placeholder="Autor"/>
                         <ValidationMessage For="@(() => BlogNuevo.Autor)" />
                         <div class="form-text">@(BlogNuevo.Autor?.Length ?? 0)/50 caracteres</div>
                     </div>
+                    
                     <div class="mb-3">
-                        <label class="form-label">Descripción <small class="text-muted">(máximo 500 caracteres)</small></label>
-                        <InputTextArea class="form-control" rows="4" @bind-Value="BlogNuevo.Descripcion" maxlength="500" />
+                        <label class="form-label fw-bold">Descripción <small class="text-muted">(máximo 500 caracteres)</small></label>
+                        <InputTextArea class="form-control" rows="4" @bind-Value="BlogNuevo.Descripcion" maxlength="500" placeholder="Descripción del blog"/>
                         <ValidationMessage For="@(() => BlogNuevo.Descripcion)" />
                         <div class="form-text">@(BlogNuevo.Descripcion?.Length ?? 0)/500 caracteres</div>
                     </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="CerrarModalCrear">Cancelar</button>
-                    <button type="submit" class="btn btn-success" disabled="@GuardandoBlog">
+                    
+                    </div>
+                
+                <div class="modal-footer d-flex justify-content-end gap-2">
+                    
+                    <button type="button" class="btn btn-outline-secondary btn-lg" @onclick="CerrarModalCrear">
+                        <i class="bi bi-x-circle"></i> Cancelar
+                    </button>
+
+                    <button type="submit" class="btn btn-success btn-lg" disabled="@GuardandoBlog">
                         @if (GuardandoBlog)
                         {
-                            <span class="spinner-border spinner-border-sm me-2"></span>
+                            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
                         }
-                        Crear Blog
+                        <i class="bi bi-save"></i> Crear Blog
                     </button>
                 </div>
             </EditForm>
@@ -159,44 +174,54 @@ else
     </div>
 </div>
 
-<!-- Modal Editar Blog -->
-<div class="modal fade @(MostrarModalEditar ? "show" : "")" style="display: @(MostrarModalEditar ? "block" : "none")" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
+<div class="modal fade @(MostrarModalEditar ? "show" : "")" style="display: @(MostrarModalEditar ? "block" : "none"); background-color: rgba(0,0,0,0.5);" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content card shadow-lg border-success">
             <EditForm Model="BlogEditando" OnValidSubmit="ModificarBlog">
                 <DataAnnotationsValidator />
-                <div class="modal-header">
-                    <h5 class="modal-title">Modificar Blog</h5>
-                    <button type="button" class="btn-close" @onclick="CerrarModalEditar"></button>
+                
+                <div class="modal-header bg-success text-white card-header">
+                    <h5 class="modal-title mb-0 fw-bold">Editar Blog</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CerrarModalEditar"></button>
                 </div>
+                
                 <div class="modal-body">
+                    
                     <div class="mb-3">
-                        <label class="form-label">Título <small class="text-muted">(máximo 100 caracteres)</small></label>
-                        <InputText class="form-control" @bind-Value="BlogEditando.Titulo" maxlength="100" />
+                        <label class="form-label fw-bold">Título <small class="text-muted">(máximo 100 caracteres)</small></label>
+                        <InputText class="form-control" @bind-Value="BlogEditando.Titulo" maxlength="100" placeholder="Título del blog" />
                         <ValidationMessage For="@(() => BlogEditando.Titulo)" />
                         <div class="form-text">@(BlogEditando.Titulo?.Length ?? 0)/100 caracteres</div>
                     </div>
+                    
                     <div class="mb-3">
-                        <label class="form-label">Autor <small class="text-muted">(máximo 50 caracteres)</small></label>
-                        <InputText class="form-control" @bind-Value="BlogEditando.Autor" maxlength="50" />
+                        <label class="form-label fw-bold">Autor <small class="text-muted">(máximo 50 caracteres)</small></label>
+                        <InputText class="form-control" @bind-Value="BlogEditando.Autor" maxlength="50" placeholder="Autor" />
                         <ValidationMessage For="@(() => BlogEditando.Autor)" />
                         <div class="form-text">@(BlogEditando.Autor?.Length ?? 0)/50 caracteres</div>
                     </div>
+                    
                     <div class="mb-3">
-                        <label class="form-label">Descripción <small class="text-muted">(máximo 500 caracteres)</small></label>
-                        <InputTextArea class="form-control" rows="4" @bind-Value="BlogEditando.Descripcion" maxlength="500" />
+                        <label class="form-label fw-bold">Descripción <small class="text-muted">(máximo 500 caracteres)</small></label>
+                        <InputTextArea class="form-control" rows="4" @bind-Value="BlogEditando.Descripcion" maxlength="500" placeholder="Descripción del blog" />
                         <ValidationMessage For="@(() => BlogEditando.Descripcion)" />
                         <div class="form-text">@(BlogEditando.Descripcion?.Length ?? 0)/500 caracteres</div>
                     </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="CerrarModalEditar">Cancelar</button>
-                    <button type="submit" class="btn btn-warning" disabled="@GuardandoBlog">
+                    
+                    </div>
+                
+                <div class="modal-footer d-flex justify-content-end gap-2">
+                    
+                    <button type="button" class="btn btn-outline-secondary btn-lg" @onclick="CerrarModalEditar">
+                        <i class="bi bi-x-circle"></i> Regresar
+                    </button>
+
+                    <button type="submit" class="btn btn-outline-success btn-lg" disabled="@GuardandoBlog">
                         @if (GuardandoBlog)
                         {
-                            <span class="spinner-border spinner-border-sm me-2"></span>
+                            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
                         }
-                        Modificar Blog
+                        <i class="bi bi-save"></i> Guardar Cambios
                     </button>
                 </div>
             </EditForm>
