@@ -93,5 +93,41 @@ namespace FrontendG5A.Services
             await _localStorage.DeleteAsync("authToken");
             _httpClient.DefaultRequestHeaders.Authorization = null;
         }
+
+        //tiene rol admin
+        public async Task<bool> IsAdmin()
+        {
+            var token = await GetToken();
+            if (string.IsNullOrEmpty(token))
+            {
+                return false;
+            }
+
+            try
+            {
+                var handler = new JwtSecurityTokenHandler();
+                var jwtToken = handler.ReadJwtToken(token);
+
+                // 1. AJUSTAR: El nombre del claim de rol en tu JWT es "roles" (en minúsculas)
+                const string RoleClaimType = "roles";
+
+                // 2. AJUSTAR: El nombre del rol de administrador en tu JWT es "ROLE_ADMINISTRADOR"
+                const string AdminRoleName = "ROLE_ADMINISTRADOR";
+
+                // 3. BUSCAR: Buscamos cualquier claim con el tipo "roles"
+                // y verificamos si alguno de ellos tiene el valor de Admin.
+                var isAdmin = jwtToken.Claims
+                    .Any(c => c.Type.Equals(RoleClaimType, StringComparison.OrdinalIgnoreCase) &&
+                              c.Value.Equals(AdminRoleName, StringComparison.OrdinalIgnoreCase));
+
+                return isAdmin;
+            }
+            catch (Exception ex)
+            {
+                // Esto captura errores si el token está mal formado o no es un JWT válido
+                Console.WriteLine($"Error al verificar el rol del token: {ex.Message}");
+                return false;
+            }
+        }
     }
 }

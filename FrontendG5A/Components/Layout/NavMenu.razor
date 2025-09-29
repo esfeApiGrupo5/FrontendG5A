@@ -2,7 +2,6 @@
 @rendermode InteractiveServer
 @inject AuthService AuthService
 @inject NavigationManager NavManager
-@* Puedes usar NavigationManager para redirigir después del logout *@
 
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
@@ -17,7 +16,7 @@
 
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Inicio
+                <span class="bi bi-house-door-fill" aria-hidden="true"></span> Inicio
             </NavLink>
         </div>
 
@@ -38,20 +37,10 @@
         else
         {
             @* Lógica Condicional: Si SÍ está autenticado *@
-            <div class="nav-item px-3">
-                <button class="nav-link btn btn-link" @onclick="HandleLogout">
-                    <span class="bi bi-box-arrow-right" aria-hidden="true"></span> Cerrar Sesión
-                </button>
-            </div>
 
             <div class="nav-item px-3">
-            <NavLink class="nav-link" href="blog" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> blogs
-            </NavLink>
-        </div>
-            <div class="nav-item px-3">
-                <NavLink class="nav-link" href="usuarios" Match="NavLinkMatch.All">
-                    <span class="bi bi-people-fill" aria-hidden="true"></span> Usuarios
+                <NavLink class="nav-link" href="blog" Match="NavLinkMatch.All">
+                    <span class="bi bi-box-seam-fill" aria-hidden="true"></span> blogs
                 </NavLink>
             </div>
             <div class="nav-item px-3">
@@ -59,13 +48,31 @@
                     <span class="bi bi-box-seam-fill" aria-hidden="true"></span> Productos
                 </NavLink>
             </div>
+
+            @* 🔑 Lógica Condicional: Mostrar solo si es Administrador *@
+            @if (isAdmin)
+            {
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="usuarios" Match="NavLinkMatch.All">
+                        <span class="bi bi-people-fill" aria-hidden="true"></span> Usuarios
+                    </NavLink>
+                </div>
+            }
+
+            <div class="nav-item px-3">
+                <button class="nav-link btn btn-link" @onclick="HandleLogout">
+                    <span class="bi bi-box-arrow-right" aria-hidden="true"></span> Cerrar Sesión
+                </button>
+            </div>
         }
     </nav>
 </div>
 
 @code {
     private bool isAuthenticated = false;
-    private bool firstRender = true; // Flag para controlar que se ejecute solo una vez
+    // 1. 🆕 Nueva variable para el estado de Administrador
+    private bool isAdmin = false;
+    private bool firstRender = true;
 
     // ✅ USAR OnAfterRenderAsync
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -73,20 +80,26 @@
         if (firstRender)
         {
             // Este código solo se ejecuta después de que el componente interactivo
-            // se ha inicializado y la conexión con el cliente está lista (interop habilitado).
+            // se ha inicializado y la conexión con el cliente está lista.
             isAuthenticated = await AuthService.IsAuthenticated();
 
-            // Forzamos una actualización para mostrar el menú correcto (Login vs Logout)
+            // 2. 🔑 Verificar el rol de administrador solo si está autenticado
+            if (isAuthenticated)
+            {
+                isAdmin = await AuthService.IsAdmin();
+            }
+
+            // Forzamos una actualización para mostrar el menú correcto (Login vs Logout / Admin vs User)
             StateHasChanged();
         }
     }
 
-    // Manejador del clic para el botón "Cerrar Sesión" (Se mantiene igual)
+    // Manejador del clic para el botón "Cerrar Sesión"
     private async Task HandleLogout()
     {
         await AuthService.Logout();
         isAuthenticated = false;
+        isAdmin = false; // Importante: resetear el estado del rol al cerrar sesión
         NavManager.NavigateTo("/", forceLoad: true);
     }
 }
-
