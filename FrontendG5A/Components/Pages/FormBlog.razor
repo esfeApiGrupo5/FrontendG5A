@@ -5,23 +5,26 @@
 @inject BlogService BlogService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components
+
 <div class="container my-4">
     <div class="row">
         <h1 class="mb-4 text-center text-success fw-bold">Gestión de Blogs</h1>
-        
+
         <div class="col-12 mb-4 p-4 rounded-3 shadow-sm" style="background-color: #f8f9fa;">
             <div class="d-flex align-items-center gap-3">
-                
+
                 <div class="flex-grow-1">
                     <label for="terminoBusqueda" class="form-label visually-hidden">Buscar por título</label>
-                    <input type="text" 
-                           class="form-control form-control-lg" 
-                           id="terminoBusqueda"
-                           placeholder="Buscar por título..."
-                           @bind="TerminoBusqueda" 
-                           @onkeypress="OnKeyPressBusqueda" />
+                    <input type="text"
+                                         class="form-control form-control-lg"
+                                         id="terminoBusqueda"
+                                         placeholder="Buscar por título..."
+                                         @bind="TerminoBusqueda"
+                                         @onkeypress="OnKeyPressBusqueda" />
                 </div>
-                
+
                 <div class="d-flex gap-2">
                     <button class="btn btn-outline-primary btn-lg" type="button" @onclick="BuscarBlogs">
                         <i class="bi bi-search"></i> Buscar
@@ -29,7 +32,7 @@
                     <button class="btn btn-outline-secondary btn-lg" type="button" @onclick="LimpiarBusqueda">
                         <i class="bi bi-x-circle"></i> Limpiar
                     </button>
-                    @* Asumiendo que el usuario es "admin" para mostrar el botón de crear, similar a la lógica de Thymeleaf *@
+
                     <button class="btn btn-outline-success btn-lg" @onclick="MostrarModalCrear">
                         <i class="bi bi-plus-circle"></i> Nuevo
                     </button>
@@ -75,22 +78,27 @@
                                 <div class="card-body d-flex flex-column">
                                     <h5 class="card-title fw-bold text-success">@blog.Titulo</h5>
                                     <h6 class="card-subtitle mb-2 text-muted">ID: @blog.Id</h6>
-                                    
+
                                     <p class="card-text">Autor: <strong>@blog.Autor</strong></p>
                                     <p class="card-text">Fecha: @blog.FechaPublicacion.ToString("dd/MM/yyyy HH:mm")</p>
                                     <p class="card-text">Usuario: @(blog.InfoUsuario?.NombreUsuario ?? "N/A")</p>
                                     <p class="card-text">Descripción: @blog.Descripcion</p>
-                                    
+
                                     <div class="mt-auto d-grid gap-2">
                                         <button class="btn btn-outline-secondary" @onclick="() => VerDetalleBlog(blog.Id)">
                                             <i class="bi bi-eye"></i> Detalles
                                         </button>
-                                        <button class="btn btn-outline-warning text-dark" @onclick="() => MostrarModalEditarBlog(blog)">
-                                            <i class="bi bi-pencil-square"></i> Editar
-                                        </button>
-                                        <button class="btn btn-outline-danger" @onclick="() => ConfirmarEliminar(blog)">
-                                            <i class="bi bi-trash"></i> Eliminar
-                                        </button>
+
+                                        @* Editar y Eliminar siguen siendo solo para Admin *@
+                                        @if (IsAdminUser)
+                                        {
+                                            <button class="btn btn-outline-warning text-dark" @onclick="() => MostrarModalEditarBlog(blog)">
+                                                <i class="bi bi-pencil-square"></i> Editar
+                                            </button>
+                                            <button class="btn btn-outline-danger" @onclick="() => ConfirmarEliminar(blog)">
+                                                <i class="bi bi-trash"></i> Eliminar
+                                            </button>
+                                        }
                                     </div>
                                 </div>
                             </div>
@@ -119,44 +127,45 @@
 }
 
 <!-- Modal Crear Blog -->
+@* Modal de creación *@
 <div class="modal fade @(MostrarModalNuevo ? "show" : "")" style="display: @(MostrarModalNuevo ? "block" : "none"); background-color: rgba(0,0,0,0.5);" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content card shadow-lg border-success">
             <EditForm Model="BlogNuevo" OnValidSubmit="CrearBlog">
                 <DataAnnotationsValidator />
-                
+
                 <div class="modal-header bg-success text-white card-header">
                     <h5 class="modal-title mb-0 fw-bold">Crear Nuevo Blog</h5>
                     <button type="button" class="btn-close btn-close-white" @onclick="CerrarModalCrear"></button>
                 </div>
-                
+
                 <div class="modal-body">
-                    
+
                     <div class="mb-3">
                         <label class="form-label fw-bold">Título <small class="text-muted">(máximo 100 caracteres)</small></label>
-                        <InputText class="form-control" @bind-Value="BlogNuevo.Titulo" maxlength="100" placeholder="Título del blog"/>
+                        <InputText class="form-control" @bind-Value="BlogNuevo.Titulo" maxlength="100" placeholder="Título del blog" />
                         <ValidationMessage For="@(() => BlogNuevo.Titulo)" />
                         <div class="form-text">@(BlogNuevo.Titulo?.Length ?? 0)/100 caracteres</div>
                     </div>
-                    
+
                     <div class="mb-3">
                         <label class="form-label fw-bold">Autor <small class="text-muted">(máximo 50 caracteres)</small></label>
-                        <InputText class="form-control" @bind-Value="BlogNuevo.Autor" maxlength="50" placeholder="Autor"/>
+                        <InputText class="form-control" @bind-Value="BlogNuevo.Autor" maxlength="50" placeholder="Autor" />
                         <ValidationMessage For="@(() => BlogNuevo.Autor)" />
                         <div class="form-text">@(BlogNuevo.Autor?.Length ?? 0)/50 caracteres</div>
                     </div>
-                    
+
                     <div class="mb-3">
                         <label class="form-label fw-bold">Descripción <small class="text-muted">(máximo 500 caracteres)</small></label>
-                        <InputTextArea class="form-control" rows="4" @bind-Value="BlogNuevo.Descripcion" maxlength="500" placeholder="Descripción del blog"/>
+                        <InputTextArea class="form-control" rows="4" @bind-Value="BlogNuevo.Descripcion" maxlength="500" placeholder="Descripción del blog" />
                         <ValidationMessage For="@(() => BlogNuevo.Descripcion)" />
                         <div class="form-text">@(BlogNuevo.Descripcion?.Length ?? 0)/500 caracteres</div>
                     </div>
-                    
-                    </div>
-                
+
+                </div>
+
                 <div class="modal-footer d-flex justify-content-end gap-2">
-                    
+
                     <button type="button" class="btn btn-outline-secondary btn-lg" @onclick="CerrarModalCrear">
                         <i class="bi bi-x-circle"></i> Cancelar
                     </button>
@@ -174,60 +183,66 @@
     </div>
 </div>
 
-<div class="modal fade @(MostrarModalEditar ? "show" : "")" style="display: @(MostrarModalEditar ? "block" : "none"); background-color: rgba(0,0,0,0.5);" tabindex="-1">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content card shadow-lg border-success">
-            <EditForm Model="BlogEditando" OnValidSubmit="ModificarBlog">
-                <DataAnnotationsValidator />
-                
-                <div class="modal-header bg-success text-white card-header">
-                    <h5 class="modal-title mb-0 fw-bold">Editar Blog</h5>
-                    <button type="button" class="btn-close btn-close-white" @onclick="CerrarModalEditar"></button>
-                </div>
-                
-                <div class="modal-body">
-                    
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Título <small class="text-muted">(máximo 100 caracteres)</small></label>
-                        <InputText class="form-control" @bind-Value="BlogEditando.Titulo" maxlength="100" placeholder="Título del blog" />
-                        <ValidationMessage For="@(() => BlogEditando.Titulo)" />
-                        <div class="form-text">@(BlogEditando.Titulo?.Length ?? 0)/100 caracteres</div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Autor <small class="text-muted">(máximo 50 caracteres)</small></label>
-                        <InputText class="form-control" @bind-Value="BlogEditando.Autor" maxlength="50" placeholder="Autor" />
-                        <ValidationMessage For="@(() => BlogEditando.Autor)" />
-                        <div class="form-text">@(BlogEditando.Autor?.Length ?? 0)/50 caracteres</div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Descripción <small class="text-muted">(máximo 500 caracteres)</small></label>
-                        <InputTextArea class="form-control" rows="4" @bind-Value="BlogEditando.Descripcion" maxlength="500" placeholder="Descripción del blog" />
-                        <ValidationMessage For="@(() => BlogEditando.Descripcion)" />
-                        <div class="form-text">@(BlogEditando.Descripcion?.Length ?? 0)/500 caracteres</div>
-                    </div>
-                    
-                    </div>
-                
-                <div class="modal-footer d-flex justify-content-end gap-2">
-                    
-                    <button type="button" class="btn btn-outline-secondary btn-lg" @onclick="CerrarModalEditar">
-                        <i class="bi bi-x-circle"></i> Regresar
-                    </button>
 
-                    <button type="submit" class="btn btn-outline-success btn-lg" disabled="@GuardandoBlog">
-                        @if (GuardandoBlog)
-                        {
-                            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                        }
-                        <i class="bi bi-save"></i> Guardar Cambios
-                    </button>
-                </div>
-            </EditForm>
+<!-- Modal Editar Blog -->
+@if (IsAdminUser)
+{
+    <div class="modal fade @(MostrarModalEditar ? "show" : "")" style="display: @(MostrarModalEditar ? "block" : "none"); background-color: rgba(0,0,0,0.5);" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content card shadow-lg border-success">
+                <EditForm Model="BlogEditando" OnValidSubmit="ModificarBlog">
+                    <DataAnnotationsValidator />
+
+                    <div class="modal-header bg-success text-white card-header">
+                        <h5 class="modal-title mb-0 fw-bold">Editar Blog</h5>
+                        <button type="button" class="btn-close btn-close-white" @onclick="CerrarModalEditar"></button>
+                    </div>
+
+                    <div class="modal-body">
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Título <small class="text-muted">(máximo 100 caracteres)</small></label>
+                            <InputText class="form-control" @bind-Value="BlogEditando.Titulo" maxlength="100" placeholder="Título del blog" />
+                            <ValidationMessage For="@(() => BlogEditando.Titulo)" />
+                            <div class="form-text">@(BlogEditando.Titulo?.Length ?? 0)/100 caracteres</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Autor <small class="text-muted">(máximo 50 caracteres)</small></label>
+                            <InputText class="form-control" @bind-Value="BlogEditando.Autor" maxlength="50" placeholder="Autor" />
+                            <ValidationMessage For="@(() => BlogEditando.Autor)" />
+                            <div class="form-text">@(BlogEditando.Autor?.Length ?? 0)/50 caracteres</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Descripción <small class="text-muted">(máximo 500 caracteres)</small></label>
+                            <InputTextArea class="form-control" rows="4" @bind-Value="BlogEditando.Descripcion" maxlength="500" placeholder="Descripción del blog" />
+                            <ValidationMessage For="@(() => BlogEditando.Descripcion)" />
+                            <div class="form-text">@(BlogEditando.Descripcion?.Length ?? 0)/500 caracteres</div>
+                        </div>
+
+                    </div>
+
+                    <div class="modal-footer d-flex justify-content-end gap-2">
+
+                        <button type="button" class="btn btn-outline-secondary btn-lg" @onclick="CerrarModalEditar">
+                            <i class="bi bi-x-circle"></i> Regresar
+                        </button>
+
+                        <button type="submit" class="btn btn-outline-success btn-lg" disabled="@GuardandoBlog">
+                            @if (GuardandoBlog)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                            }
+                            <i class="bi bi-save"></i> Guardar Cambios
+                        </button>
+                    </div>
+                </EditForm>
+            </div>
         </div>
     </div>
-</div>
+}
+
 
 @if (MostrarModalNuevo || MostrarModalEditar)
 {
@@ -241,20 +256,31 @@
     private string MensajeError = string.Empty;
     private string MensajeExito = string.Empty;
 
-    // Modal Crear
-    private bool MostrarModalNuevo = false;
+    // Estado para el rol de administrador (necesario para Editar y Eliminar)
+    private bool IsAdminUser = false;
+
+    // Modal Crear
+    private bool MostrarModalNuevo = false;
     private BlogCrearDTO BlogNuevo = new();
     private bool GuardandoBlog = false;
 
-    // Modal Editar
-    private bool MostrarModalEditar = false;
+    // Modal Editar
+    private bool MostrarModalEditar = false;
     private BlogModificarDTO BlogEditando = new();
     private int BlogEditandoId = 0;
 
     protected override async Task OnInitializedAsync()
     {
         await ConfigurarAutenticacion();
+        // Verificar el rol de administrador al iniciar (sigue siendo necesario para Editar/Eliminar)
+        await VerificarRolAdmin();
         await CargarBlogs();
+    }
+
+    // Método para verificar el rol
+    private async Task VerificarRolAdmin()
+    {
+        IsAdminUser = await AuthService.IsAdmin();
     }
 
     private async Task ConfigurarAutenticacion()
@@ -262,7 +288,8 @@
         var token = await AuthService.GetToken();
         if (!string.IsNullOrEmpty(token))
         {
-            await AuthService.SetToken(token);
+            // Establece el token en HttpClient para futuras solicitudes
+            await AuthService.SetToken(token);
         }
     }
 
@@ -289,7 +316,7 @@
         CargandoBusqueda = true;
         MensajeError = string.Empty; // Limpiar errores previos
 
-        try
+        try
         {
             if (string.IsNullOrWhiteSpace(TerminoBusqueda))
             {
@@ -331,10 +358,10 @@
         }
     }
 
-    // Métodos del Modal Crear
-    private void MostrarModalCrear()
+    // Métodos del Modal Crear
+    private void MostrarModalCrear()
     {
-        BlogNuevo = new BlogCrearDTO();
+        BlogNuevo = new BlogCrearDTO();
         MostrarModalNuevo = true;
     }
 
@@ -346,7 +373,7 @@
 
     private async Task CrearBlog()
     {
-        GuardandoBlog = true;
+        GuardandoBlog = true;
 
         var resultado = await BlogService.CrearBlogAsync(BlogNuevo);
 
@@ -364,17 +391,21 @@
         GuardandoBlog = false;
     }
 
-    // Métodos del Modal Editar
-    private void MostrarModalEditarBlog(BlogDTO blog)
+    // Métodos del Modal Editar
+    private void MostrarModalEditarBlog(BlogDTO blog)
     {
-        BlogEditandoId = blog.Id;
-        BlogEditando = new BlogModificarDTO
+        // Solo permitir si es Admin (Lógica sin cambios)
+        if (IsAdminUser)
         {
-            Titulo = blog.Titulo ?? string.Empty,
-            Autor = blog.Autor ?? string.Empty,
-            Descripcion = blog.Descripcion ?? string.Empty
-        };
-        MostrarModalEditar = true;
+            BlogEditandoId = blog.Id;
+            BlogEditando = new BlogModificarDTO
+            {
+                Titulo = blog.Titulo ?? string.Empty,
+                Autor = blog.Autor ?? string.Empty,
+                Descripcion = blog.Descripcion ?? string.Empty
+            };
+            MostrarModalEditar = true;
+        }
     }
 
     private void CerrarModalEditar()
@@ -386,6 +417,9 @@
 
     private async Task ModificarBlog()
     {
+        // Doble verificación de seguridad (Lógica sin cambios)
+        if (!IsAdminUser) { MensajeError = "Acceso denegado."; return; }
+
         GuardandoBlog = true;
 
         var resultado = await BlogService.ModificarBlogAsync(BlogEditandoId, BlogEditando);
@@ -404,17 +438,21 @@
         GuardandoBlog = false;
     }
 
-    // Método para ver detalles
-    private void VerDetalleBlog(int id)
+    // Método para ver detalles
+    private void VerDetalleBlog(int id)
     {
         Navigation.NavigateTo($"/blog/{id}");
     }
 
-    // Método para confirmar eliminación
-    private async Task ConfirmarEliminar(BlogDTO blog)
+    // Método para confirmar eliminación
+    private async Task ConfirmarEliminar(BlogDTO blog)
     {
-        var confirmado = await JSRuntime.InvokeAsync<bool>("confirm",
-            $"¿Estás seguro de que deseas eliminar el blog '{blog.Titulo}'?");
+        // Doble verificación de seguridad (Lógica sin cambios)
+        if (!IsAdminUser) { MensajeError = "Acceso denegado."; return; }
+
+        // Usando un modal de confirmación simple 
+        var confirmado = await JSRuntime.InvokeAsync<bool>("confirm",
+      $"¿Estás seguro de que deseas eliminar el blog '{blog.Titulo}'?");
 
         if (confirmado)
         {
