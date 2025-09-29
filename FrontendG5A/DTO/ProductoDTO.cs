@@ -32,5 +32,15 @@ namespace FrontendG5A.DTO
 
         // Propiedad calculada para el estado del stock
         public string EstadoStock => Stock > 10 ? "Disponible" : Stock > 0 ? "Poco Stock" : "Agotado";
+
+        // 🆕 Propiedad para validar si la URL de imagen es válida
+        public bool TieneImagenValida => !string.IsNullOrWhiteSpace(UrlImagen) &&
+                                         (UrlImagen.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+                                          UrlImagen.StartsWith("https://", StringComparison.OrdinalIgnoreCase));
+
+        // 🆕 Propiedad para obtener la URL de imagen o una imagen por defecto
+        public string UrlImagenSegura => TieneImagenValida
+            ? UrlImagen!
+            : "https://via.placeholder.com/400x300?text=Sin+Imagen";
     }
 }

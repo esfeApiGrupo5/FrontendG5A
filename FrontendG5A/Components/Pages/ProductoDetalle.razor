@@ -53,15 +53,22 @@
                             <div class="col-md-5">
                                 @if (!string.IsNullOrEmpty(Producto.UrlImagen))
                                 {
-                                    <img src="@Producto.UrlImagen" class="img-fluid rounded shadow" alt="@Producto.Nombre" style="width: 100%; max-height: 400px; object-fit: cover;">
+                                    <img src="@Producto.UrlImagenSegura"
+                                         class="img-fluid rounded shadow"
+                                         alt="@Producto.Nombre"
+                                         style="width: 100%; max-height: 400px; object-fit: cover;"
+                                         onerror="this.onerror=null; this.src='https://via.placeholder.com/400x300?text=Imagen+No+Disponible';" />
                                 }
                                 else
                                 {
-                                    <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 400px;">
-                                        <i class="bi bi-image text-muted" style="font-size: 5rem;"></i>
+                                    <div class="bg-light rounded d-flex align-items-center justify-content-center shadow"
+                                         style="height: 400px;">
+                                        <div class="text-center">
+                                            <i class="bi bi-image text-muted" style="font-size: 5rem;"></i>
+                                            <p class="text-muted mt-3 mb-0 fs-5">Sin imagen disponible</p>
+                                        </div>
                                     </div>
                                 }
-                            </div>
 
                             <!-- Columna de los detalles -->
                             <div class="col-md-7">
