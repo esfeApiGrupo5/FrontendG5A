@@ -16,6 +16,8 @@ builder.Services.AddScoped<BlogService>();
 
 builder.Services.AddScoped<UsuarioService>();
 
+builder.Services.AddScoped<ProductoService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

@@ -1,0 +1,422 @@
+﻿@page "/producto/{id:int}"
+@using FrontendG5A.DTO
+@using FrontendG5A.Services
+
+@inject ProductoService ProductoService
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<div class="container py-5">
+
+    @if (Producto == null)
+    {
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                @if (CargandoProducto)
+                {
+                    <div class="text-center p-5">
+                        <div class="spinner-border text-warning" role="status">
+                            <span class="visually-hidden">Cargando producto...</span>
+                        </div>
+                        <p class="mt-2 text-warning">Cargando detalles del producto...</p>
+                    </div>
+                }
+                else if (ProductoNoEncontrado)
+                {
+                    <div class="alert alert-warning shadow-sm">
+                        <h4 class="alert-heading fw-bold">Producto no encontrado 😕</h4>
+                        <p>El producto con ID @Id no existe o no está disponible.</p>
+                        <hr>
+                        <button class="btn btn-warning" @onclick="VolverALista">
+                            <i class="bi bi-arrow-left"></i> Volver a la lista
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+
+                <div class="card shadow-lg border-warning">
+
+                    <div class="card-header bg-warning text-dark">
+                        <h2 class="card-title mb-0 fw-bold">Detalles del Producto</h2>
+                    </div>
+
+                    <div class="card-body">
+                        <div class="row">
+                            <!-- Columna de la imagen -->
+                            <div class="col-md-5">
+                                @if (!string.IsNullOrEmpty(Producto.UrlImagen))
+                                {
+                                    <img src="@Producto.UrlImagen" class="img-fluid rounded shadow" alt="@Producto.Nombre" style="width: 100%; max-height: 400px; object-fit: cover;">
+                                }
+                                else
+                                {
+                                    <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 400px;">
+                                        <i class="bi bi-image text-muted" style="font-size: 5rem;"></i>
+                                    </div>
+                                }
+                            </div>
+
+                            <!-- Columna de los detalles -->
+                            <div class="col-md-7">
+                                <h3 class="fw-bold text-warning mb-3">@Producto.Nombre</h3>
+
+                                <dl class="row mb-4">
+                                    <dt class="col-sm-4 fw-bold text-warning">ID</dt>
+                                    <dd class="col-sm-8">@Producto.Id</dd>
+
+                                    <dt class="col-sm-4 fw-bold text-warning">Precio</dt>
+                                    <dd class="col-sm-8">
+                                        <span class="text-success fs-3 fw-bold">@Producto.PrecioFormateado</span>
+                                    </dd>
+
+                                    <dt class="col-sm-4 fw-bold text-warning">Stock</dt>
+                                    <dd class="col-sm-8">
+                                        <span class="badge @(Producto.Stock > 10 ? "bg-success" : Producto.Stock > 0 ? "bg-warning text-dark" : "bg-danger") fs-6">
+                                            @Producto.Stock unidades - @Producto.EstadoStock
+                                        </span>
+                                    </dd>
+
+                                    <dt class="col-sm-4 fw-bold text-warning">Categoría</dt>
+                                    <dd class="col-sm-8">
+                                        <span class="badge bg-info fs-6">@Producto.Categoria</span>
+                                    </dd>
+                                </dl>
+
+                                <hr class="my-4">
+
+                                <h5 class="fw-bold text-warning mb-3">Descripción del Producto</h5>
+                                <div class="product-description p-3 border rounded bg-light">
+                                    @if (!string.IsNullOrEmpty(Producto.Descripcion))
+                                    {
+                                        @foreach (var parrafo in Producto.Descripcion.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+                                        {
+                                            <p class="mb-2">@parrafo</p>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <p class="text-muted fst-italic">Este producto no tiene descripción disponible.</p>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <div class="alert alert-info">
+                            <h5 class="alert-heading"><i class="bi bi-info-circle"></i> Información del Producto</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-2"><strong>Producto:</strong> @Producto.Nombre</p>
+                                    <p class="mb-2"><strong>Precio unitario:</strong> @Producto.PrecioFormateado</p>
+                                    <p class="mb-0"><strong>Disponibilidad:</strong> @Producto.EstadoStock</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-2"><strong>Categoría:</strong> @Producto.Categoria</p>
+                                    <p class="mb-2"><strong>Unidades disponibles:</strong> @Producto.Stock</p>
+                                    <p class="mb-0"><strong>SKU:</strong> PROD-@Producto.Id.ToString("D6")</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-footer d-flex justify-content-end gap-2">
+                        <button class="btn btn-outline-warning btn-lg" @onclick="MostrarModalEditar">
+                            <i class="bi bi-pencil-square"></i> Editar
+                        </button>
+
+                        <button class="btn btn-outline-danger btn-lg" @onclick="EliminarProducto">
+                            <i class="bi bi-trash"></i> Eliminar
+                        </button>
+
+                        <button class="btn btn-outline-secondary btn-lg" @onclick="VolverALista">
+                            <i class="bi bi-arrow-left-circle"></i> Regresar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@if (!string.IsNullOrEmpty(MensajeError))
+{
+    <div class="alert alert-danger alert-dismissible fade show mt-3">
+        @MensajeError
+        <button type="button" class="btn-close" @onclick="() => MensajeError = string.Empty"></button>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(MensajeExito))
+{
+    <div class="alert alert-success alert-dismissible fade show mt-3">
+        @MensajeExito
+        <button type="button" class="btn-close" @onclick="() => MensajeExito = string.Empty"></button>
+    </div>
+}
+
+<!-- Modal Editar Producto -->
+<div class="modal fade @(MostrarModalEditarVisible ? "show" : "")" style="display: @(MostrarModalEditarVisible ? "block" : "none"); background-color: rgba(0,0,0,0.5);" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content card shadow-lg border-warning">
+            <EditForm Model="ProductoEditando" OnValidSubmit="GuardarCambios">
+                <DataAnnotationsValidator />
+
+                <div class="modal-header bg-warning text-dark card-header">
+                    <h5 class="modal-title mb-0 fw-bold">Editar Producto: @ProductoEditando?.Nombre</h5>
+                    <button type="button" class="btn-close" @onclick="CerrarModalEditar"></button>
+                </div>
+
+                <div class="modal-body">
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Nombre <small class="text-muted">(entre 2 y 100 caracteres)</small></label>
+                        <InputText class="form-control" @bind-Value="ProductoEditando.Nombre" maxlength="100" placeholder="Nombre del producto" />
+                        <ValidationMessage For="@(() => ProductoEditando.Nombre)" />
+                        <div class="form-text">@(ProductoEditando.Nombre?.Length ?? 0)/100 caracteres</div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Precio</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <InputNumber class="form-control" @bind-Value="ProductoEditando.Precio" step="0.01" placeholder="0.00" />
+                            </div>
+                            <ValidationMessage For="@(() => ProductoEditando.Precio)" />
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Stock</label>
+                            <InputNumber class="form-control" @bind-Value="ProductoEditando.Stock" placeholder="Cantidad en stock" />
+                            <ValidationMessage For="@(() => ProductoEditando.Stock)" />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Categoría <small class="text-muted">(máximo 50 caracteres)</small></label>
+                        <InputText class="form-control" @bind-Value="ProductoEditando.Categoria" maxlength="50" placeholder="Categoría del producto" />
+                        <ValidationMessage For="@(() => ProductoEditando.Categoria)" />
+                        <div class="form-text">@(ProductoEditando.Categoria?.Length ?? 0)/50 caracteres</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Descripción <small class="text-muted">(entre 10 y 500 caracteres)</small></label>
+                        <InputTextArea class="form-control" rows="4" @bind-Value="ProductoEditando.Descripcion" maxlength="500" placeholder="Descripción del producto" />
+                        <ValidationMessage For="@(() => ProductoEditando.Descripcion)" />
+                        <div class="form-text">@(ProductoEditando.Descripcion?.Length ?? 0)/500 caracteres</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">URL de la Imagen</label>
+                        <InputText class="form-control" @bind-Value="ProductoEditando.UrlImagen" placeholder="https://ejemplo.com/imagen.jpg" />
+                        <ValidationMessage For="@(() => ProductoEditando.UrlImagen)" />
+                        <div class="form-text">Ingrese la URL completa de la imagen del producto</div>
+                    </div>
+
+                </div>
+
+                <div class="modal-footer d-flex justify-content-end gap-2">
+
+                    <button type="button" class="btn btn-outline-secondary btn-lg" @onclick="CerrarModalEditar">
+                        <i class="bi bi-x-circle"></i> Regresar
+                    </button>
+
+                    <button type="submit" class="btn btn-outline-warning btn-lg" disabled="@GuardandoCambios">
+                        @if (GuardandoCambios)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        }
+                        <i class="bi bi-save"></i> Guardar Cambios
+                    </button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+@if (MostrarModalEditarVisible)
+{
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private ProductoDTO? Producto;
+    private bool CargandoProducto = true;
+    private bool ProductoNoEncontrado = false;
+    private string MensajeError = string.Empty;
+    private string MensajeExito = string.Empty;
+
+    // Modal Editar
+    private bool MostrarModalEditarVisible = false;
+    private ProductoModificarDTO ProductoEditando = new();
+    private bool GuardandoCambios = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ConfigurarAutenticacion();
+        await CargarProducto();
+    }
+
+    private async Task ConfigurarAutenticacion()
+    {
+        var token = await AuthService.GetToken();
+        if (!string.IsNullOrEmpty(token))
+        {
+            await AuthService.SetToken(token);
+        }
+    }
+
+    private async Task CargarProducto()
+    {
+        CargandoProducto = true;
+        ProductoNoEncontrado = false;
+
+        try
+        {
+            Console.WriteLine($"[ProductoDetail] Cargando producto ID: {Id}");
+            Producto = await ProductoService.ObtenerProductoPorIdAsync(Id);
+
+            if (Producto == null)
+            {
+                Console.WriteLine($"[ProductoDetail] Producto ID {Id} no encontrado");
+                ProductoNoEncontrado = true;
+            }
+            else
+            {
+                Console.WriteLine($"[ProductoDetail] Producto cargado: {Producto.Nombre}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ProductoDetail Error] Error al cargar producto: {ex.Message}");
+            MensajeError = $"Error al cargar el producto: {ex.Message}";
+            ProductoNoEncontrado = true;
+        }
+        finally
+        {
+            CargandoProducto = false;
+        }
+    }
+
+    private void VolverALista()
+    {
+        Navigation.NavigateTo("/productos");
+    }
+
+    // Métodos del Modal Editar
+    private void MostrarModalEditar()
+    {
+        if (Producto == null) return;
+
+        Console.WriteLine($"[ProductoDetail] Abriendo modal de edición para producto ID: {Producto.Id}");
+        ProductoEditando = new ProductoModificarDTO
+        {
+            Id = Producto.Id,
+            Nombre = Producto.Nombre ?? string.Empty,
+            Precio = Producto.Precio,
+            Descripcion = Producto.Descripcion ?? string.Empty,
+            Stock = Producto.Stock,
+            Categoria = Producto.Categoria ?? string.Empty,
+            UrlImagen = Producto.UrlImagen ?? string.Empty
+        };
+        MostrarModalEditarVisible = true;
+        StateHasChanged();
+    }
+
+    private void CerrarModalEditar()
+    {
+        MostrarModalEditarVisible = false;
+        ProductoEditando = new ProductoModificarDTO();
+        MensajeError = string.Empty;
+        StateHasChanged();
+    }
+
+    private async Task GuardarCambios()
+    {
+        if (Producto == null) return;
+
+        GuardandoCambios = true;
+        StateHasChanged();
+
+        try
+        {
+            Console.WriteLine($"[ProductoDetail] Guardando cambios para producto ID: {Producto.Id}");
+            var resultado = await ProductoService.ModificarProductoAsync(Producto.Id, ProductoEditando);
+
+            if (resultado)
+            {
+                Console.WriteLine($"[ProductoDetail] Producto modificado exitosamente");
+                MensajeExito = "Producto modificado exitosamente";
+
+                // Actualizar los datos del producto en la vista
+                Producto.Nombre = ProductoEditando.Nombre;
+                Producto.Precio = ProductoEditando.Precio;
+                Producto.Descripcion = ProductoEditando.Descripcion;
+                Producto.Stock = ProductoEditando.Stock;
+                Producto.Categoria = ProductoEditando.Categoria;
+                Producto.UrlImagen = ProductoEditando.UrlImagen;
+
+                CerrarModalEditar();
+            }
+            else
+            {
+                Console.WriteLine($"[ProductoDetail] Error al modificar producto");
+                MensajeError = "Error al modificar el producto. Intenta nuevamente.";
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ProductoDetail Error] Error al guardar: {ex.Message}");
+            MensajeError = $"Error al guardar los cambios: {ex.Message}";
+        }
+        finally
+        {
+            GuardandoCambios = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task EliminarProducto()
+    {
+        if (Producto == null) return;
+
+        try
+        {
+            var confirmado = await JSRuntime.InvokeAsync<bool>("confirm",
+                $"¿Estás seguro de que deseas eliminar el producto '{Producto.Nombre}'? Esta acción no se puede deshacer.");
+
+            if (confirmado)
+            {
+                Console.WriteLine($"[ProductoDetail] Eliminando producto ID: {Producto.Id}");
+                var resultado = await ProductoService.EliminarProductoAsync(Producto.Id);
+
+                if (resultado)
+                {
+                    Console.WriteLine($"[ProductoDetail] Producto eliminado exitosamente");
+                    // Redirigir a la lista después de eliminar
+                    Navigation.NavigateTo("/productos");
+                }
+                else
+                {
+                    Console.WriteLine($"[ProductoDetail] Error al eliminar producto");
+                    MensajeError = "Error al eliminar el producto. Intenta nuevamente.";
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ProductoDetail Error] Error al eliminar: {ex.Message}");
+            MensajeError = $"Error al eliminar el producto: {ex.Message}";
+        }
+    }
+}
