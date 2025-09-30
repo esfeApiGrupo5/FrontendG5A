@@ -58,19 +58,43 @@ namespace FrontendG5A.Services
         }
         // Obtiene el token del almacenamiento local
         public async Task<string?> GetToken()
+{
+    if (!string.IsNullOrEmpty(_token))
+    {
+        return _token;
+    }
+
+    try
+    {
+        var localStorageResult = await _localStorage.GetAsync<string>("authToken");
+        
+        if (!localStorageResult.Success || string.IsNullOrEmpty(localStorageResult.Value))
         {
-            if (string.IsNullOrEmpty(_token))
-            {
-                var localStorageResult = await _localStorage.GetAsync<string>("authToken");
-                if (!localStorageResult.Success || string.IsNullOrEmpty(localStorageResult.Value))
-                {
-                    _token = null;
-                    return null;
-                }
-                _token = localStorageResult.Value;
-            }
-            return _token;
+            _token = null;
+            return null;
         }
+        _token = localStorageResult.Value;
+        return _token;
+    }
+    catch (InvalidOperationException ex)
+    {
+        // Captura la excepción que ocurre SÓLO durante el prerenderizado
+        if (ex.Message.Contains("statically rendered"))
+        {
+            // Falla silenciosamente. Devolvemos null.
+            // Esto es correcto, ya que durante el prerender el token no está disponible.
+            return null; 
+        }
+        // Si es una InvalidOperationException diferente, relanzamos el error
+        throw;
+    }
+    catch (Exception)
+    {
+        // Captura cualquier otro error de lectura que pueda ocurrir
+        return null;
+    }
+}
+
 
         //Verifica si el usuario esta autenticado
         public async Task<bool> IsAuthenticated()
