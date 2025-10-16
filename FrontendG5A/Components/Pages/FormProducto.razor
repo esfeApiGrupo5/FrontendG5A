@@ -148,26 +148,33 @@
 }
 
 <!-- Modal Crear Producto -->
-<div class="modal fade @(MostrarModalNuevo ? "show" : "")" style="display: @(MostrarModalNuevo ? "block" : "none"); background-color: rgba(0,0,0,0.5);" tabindex="-1">
-    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content card shadow-lg border-warning">
+<div class="modal fade @(MostrarModalNuevo ? "show" : "")" 
+     style="display: @(MostrarModalNuevo ? "block" : "none");" 
+     tabindex="-1" 
+     role="dialog" 
+     aria-labelledby="crearProductoModalLabel" 
+     aria-hidden="@(!MostrarModalNuevo)">
+
+    <div class="modal-dialog modal-lg modal-fullscreen-sm-down">
+        
+        <div class="modal-content card shadow-lg border-warning" style="height: 100%;"> 
             <EditForm Model="ProductoNuevo" OnValidSubmit="CrearProducto">
                 <DataAnnotationsValidator />
 
                 <div class="modal-header bg-warning text-dark card-header">
-                    <h5 class="modal-title mb-0 fw-bold">Crear Nuevo Producto</h5>
+                    <h5 class="modal-title mb-0 fw-bold" id="crearProductoModalLabel">Crear Nuevo Producto</h5>
                     <button type="button" class="btn-close" @onclick="CerrarModalCrear"></button>
                 </div>
 
-                <div class="modal-body">
-
+                <div class="modal-body overflow-auto" style="flex: 1 1 auto;"> 
+                    
                     <div class="mb-3">
                         <label class="form-label fw-bold">Nombre <small class="text-muted">(entre 2 y 100 caracteres)</small></label>
                         <InputText class="form-control" @bind-Value="ProductoNuevo.Nombre" maxlength="100" placeholder="Nombre del producto" />
                         <ValidationMessage For="@(() => ProductoNuevo.Nombre)" />
                         <div class="form-text">@(ProductoNuevo.Nombre?.Length ?? 0)/100 caracteres</div>
                     </div>
-
+                    
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-bold">Precio</label>
@@ -209,7 +216,6 @@
                 </div>
 
                 <div class="modal-footer d-flex justify-content-end gap-2">
-
                     <button type="button" class="btn btn-outline-secondary btn-lg" @onclick="CerrarModalCrear">
                         <i class="bi bi-x-circle"></i> Cancelar
                     </button>
@@ -227,20 +233,29 @@
     </div>
 </div>
 
-<!-- Modal Editar Producto -->
-<div class="modal fade @(MostrarModalEditar ? "show" : "")" style="display: @(MostrarModalEditar ? "block" : "none"); background-color: rgba(0,0,0,0.5);" tabindex="-1">
-    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content card shadow-lg border-warning">
+<hr>
+
+<div class="modal fade @(MostrarModalEditar ? "show" : "")" 
+     style="display: @(MostrarModalEditar ? "block" : "none");" 
+     tabindex="-1" 
+     role="dialog" 
+     aria-labelledby="editarProductoModalLabel" 
+     aria-hidden="@(!MostrarModalEditar)">
+    
+    <div class="modal-dialog modal-lg modal-fullscreen-sm-down">
+        
+        <div class="modal-content card shadow-lg border-warning" style="height: 100%;">
+            
             <EditForm Model="ProductoEditando" OnValidSubmit="ModificarProducto">
                 <DataAnnotationsValidator />
 
                 <div class="modal-header bg-warning text-dark card-header">
-                    <h5 class="modal-title mb-0 fw-bold">Editar Producto</h5>
+                    <h5 class="modal-title mb-0 fw-bold" id="editarProductoModalLabel">Editar Producto</h5>
                     <button type="button" class="btn-close" @onclick="CerrarModalEditar"></button>
                 </div>
 
-                <div class="modal-body">
-
+                <div class="modal-body overflow-auto" style="flex: 1 1 auto;"> 
+                    
                     <div class="mb-3">
                         <label class="form-label fw-bold">Nombre <small class="text-muted">(entre 2 y 100 caracteres)</small></label>
                         <InputText class="form-control" @bind-Value="ProductoEditando.Nombre" maxlength="100" placeholder="Nombre del producto" />
@@ -289,7 +304,6 @@
                 </div>
 
                 <div class="modal-footer d-flex justify-content-end gap-2">
-
                     <button type="button" class="btn btn-outline-secondary btn-lg" @onclick="CerrarModalEditar">
                         <i class="bi bi-x-circle"></i> Regresar
                     </button>
